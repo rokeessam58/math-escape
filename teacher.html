@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방탈출 교사 대시보드</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        body { 
+            font-family: 'Nanum Gothic', sans-serif; 
+            background: #f4f7fa; 
+            margin: 0; padding: 30px 20px; color: #4a4a4a; 
+        }
+        .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px; }
+        .row-half { display: flex; gap: 25px; flex-wrap: wrap; align-items: stretch; }
+        .right-column { display: flex; flex-direction: column; gap: 25px; flex: 1; min-width: 350px; }
+
+        .panel {
+            background: #ffffff; padding: 30px; border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(162, 185, 214, 0.2);
+            flex: 1; min-width: 350px; border: 1px solid #eef2f6; box-sizing: border-box;
+        }
+
+        .monitor-panel { display: flex; flex-direction: column; }
+        .monitor-board-flex { flex: 1; overflow-y: auto; padding-right: 10px; min-height: 200px; max-height: 700px; }
+        
+        h2 { font-family: 'Gowun Dodum', sans-serif; color: #5c7285; margin-top: 0; font-size: 24px; border-bottom: 2px solid #eaf0f6; padding-bottom: 10px;}
+        
+        label { display: block; margin-top: 18px; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #728496; }
+        
+        select, input[type="text"], input[type="password"], input[type="number"], input[type="file"] {
+            width: 100%; 
+            padding: 14px 16px; 
+            box-sizing: border-box; 
+            border: 2px solid #e2e8f0; 
+            border-radius: 10px; 
+            font-family: 'Nanum Gothic', sans-serif;
+            font-size: 15px; 
+            background: #fdfdfe; 
+            transition: 0.3s; 
+            color: #333;
+        }
+        select { min-height: 52px; }
+        select:focus, input[type="text"]:focus { border-color: #a3c4f3; outline: none; background: #fff; }
+        
+        .ql-toolbar { background: #f8fafc; border-radius: 10px 10px 0 0; border: 2px solid #e2e8f0 !important; border-bottom: none !important; }
+        .ql-container { border: 2px solid #e2e8f0 !important; border-radius: 0 0 10px 10px; font-family: 'Nanum Gothic', sans-serif !important; font-size: 15px !important; background: #fdfdfe; }
+        #editor-container { height: 160px; }
+        .ql-editor { padding: 15px; line-height: 1.6; }
+        .ql-editor:focus { background: #fff; }
+
+        .action-btn { 
+            margin-top: 20px; padding: 14px 20px; background: #a3c4f3; color: #2c3e50; 
+            border: none; border-radius: 12px; cursor: pointer; font-weight: bold; 
+            font-family: 'Gowun Dodum', sans-serif; font-size: 16px; width: 100%; transition: 0.2s;
+        }
+        .action-btn:disabled { background: #d3dfeb; color: #9aaebd; cursor: not-allowed; }
+        .action-btn:hover:not(:disabled) { background: #8bb4ec; transform: translateY(-2px); }
+        
+        .delete-btn {
+            padding: 14px 20px; background: #ffb5a7; color: #7a3b3b; 
+            border: none; border-radius: 12px; cursor: pointer; font-weight: bold; 
+            font-family: 'Gowun Dodum', sans-serif; font-size: 15px; width: 100%; transition: 0.2s;
+        }
+        .delete-btn:disabled { background: #fca392; cursor: not-allowed; opacity: 0.7; }
+        .delete-btn:hover:not(:disabled) { background: #fca392; transform: translateY(-2px); }
+
+        .delete-stage-btn {
+            padding: 14px 20px; background: #e07a5f; color: #ffffff; 
+            border: none; border-radius: 12px; cursor: pointer; font-weight: bold; 
+            font-family: 'Gowun Dodum', sans-serif; font-size: 15px; width: 100%; transition: 0.2s;
+        }
+        .delete-stage-btn:disabled { background: #d8694c; cursor: not-allowed; opacity: 0.7; }
+        .delete-stage-btn:hover:not(:disabled) { background: #c85a3f; transform: translateY(-2px); }
+
+        .student-data { 
+            background: #f8fbff; border-left: 5px solid #a3c4f3; 
+            border-radius: 10px; padding: 15px; margin-bottom: 15px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            position: relative;
+        }
+        .student-data h4 { font-family: 'Gowun Dodum', sans-serif; margin-top: 0; color: #435b71; font-size: 18px; }
+        .student-data p { margin: 6px 0; font-size: 14px; color: #555; }
+
+        .del-room-btn {
+            background: #ffb5a7; color: #7a3b3b; border: none; border-radius: 8px;
+            padding: 5px 12px; font-size: 12px; font-weight: bold; cursor: pointer;
+            font-family: 'Gowun Dodum', sans-serif; transition: 0.2s;
+        }
+        .del-room-btn:hover { background: #fca392; }
+        
+        .image-preview-box { margin-top: 15px; padding: 15px; border: 2px dashed #d0dbe5; border-radius: 10px; background: #fafbfc; display: none; text-align: center; }
+        .image-preview-box img { max-width: 100%; max-height: 150px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .del-img-btn { background: #ffb5a7; color: #5a2a2a; padding: 8px 15px; margin-top: 12px; font-size: 13px; width: auto; border: none; border-radius: 6px; cursor: pointer; }
+        .del-img-btn:hover { background: #fca392; }
+        
+        .reset-btn { background: #ffb5a7; color: #7a3b3b; margin-bottom: 25px; font-size: 17px; padding: 16px; box-shadow: 0 4px 12px rgba(255, 181, 167, 0.4); border: none; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; }
+        .reset-btn:hover:not(:disabled) { background: #fca392; }
+
+        /* 📊 엑셀 박스 스타일 */
+        .excel-box { background: #f8fafc; border-radius: 12px; padding: 18px; margin-bottom: 25px; border: 2px dashed #a2b9d6; text-align: center; }
+        .excel-box h3 { margin: 0 0 5px 0; font-size: 18px; color: #435b71; font-family: 'Gowun Dodum', sans-serif; }
+        .excel-box p { font-size: 13px; color: #728496; margin: 0 0 15px 0; line-height: 1.4; }
+        .excel-btn-group { display: flex; gap: 10px; }
+        .excel-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 14px; font-family: 'Gowun Dodum', sans-serif; transition: 0.2s; }
+        .btn-download { background: #ffffff; color: #435b71; border: 1px solid #c9d6e4; }
+        .btn-download:hover { background: #eef2f6; }
+        .btn-upload { background: #435b71; color: #ffffff; }
+        .btn-upload:hover { background: #2c3e50; }
+
+        /* 🎨 커스텀 모달 스타일 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.35); backdrop-filter: blur(6px);
+            z-index: 10000; align-items: center; justify-content: center;
+        }
+        .modal-box {
+            background: #ffffff; padding: 30px 35px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center;
+            max-width: 380px; width: 85%; font-family: 'Nanum Gothic', sans-serif;
+        }
+        .modal-box p { font-size: 16px; color: #435b71; margin: 0 0 20px 0; line-height: 1.5; font-weight: bold; }
+        .modal-btn-group { display: flex; gap: 10px; justify-content: center; }
+        .modal-btn { padding: 11px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 14px; flex: 1; transition: 0.2s; font-family: 'Gowun Dodum', sans-serif; }
+        .modal-btn-ok { background: #a3c4f3; color: #2c3e50; }
+        .modal-btn-cancel { background: #e2e8f0; color: #64748b; }
+        .modal-btn-danger { background: #ffb5a7; color: #5a2a2a; }
+
+        /* 🔐 교사 로그인 화면 */
+        #login-screen {
+            max-width: 400px; margin: 80px auto; background: #ffffff; padding: 35px 30px;
+            border-radius: 20px; box-shadow: 0 8px 24px rgba(162, 185, 214, 0.2); border: 1px solid #eef2f6;
+            text-align: center;
+        }
+        #login-screen h2 { border-bottom: none; }
+        .login-error { color: #e74c3c; font-size: 13px; margin-top: 10px; display: none; }
+        #dashboard-container { display: none; }
+
+        .settings-row-wide { display: flex; gap: 30px; flex-wrap: wrap; }
+        .settings-unit { flex: 1; min-width: 240px; }
+        .settings-unit label { margin-top: 0; }
+        .settings-input-group { display: flex; gap: 10px; }
+        .settings-input-group input { margin: 0; flex: 1; width: auto; min-width: 0; }
+        .settings-save-btn { padding: 12px 18px; background: #435b71; color: #fff; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-family: 'Gowun Dodum', sans-serif; white-space: nowrap; }
+        .settings-save-btn:hover { background: #2c3e50; }
+        .themed-textarea { width: 100%; box-sizing: border-box; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; font-family: 'Nanum Gothic', sans-serif; font-size: 14px; resize: vertical; min-height: 60px; }
+        .themed-textarea:focus { border-color: #a3c4f3; outline: none; background: #fff; }
+
+        .intro-settings { margin-top: 25px; padding-top: 20px; border-top: 2px dashed #eaf0f6; }
+
+        .topbar { display: flex; justify-content: flex-end; max-width: 1200px; margin: 0 auto 15px; }
+        .logout-btn { background: none; border: 1px solid #c9d6e4; color: #728496; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; width: auto; }
+        .logout-btn:hover { background: #eef2f6; }
+    </style>
+    
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref as dbRef, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8h3jceC6gmoU24plIimhvEOJPUWrYRNg",
+            authDomain: "ms1st-math-escape-ver1.firebaseapp.com",
+            databaseURL: "https://ms1st-math-escape-ver1-default-rtdb.firebaseio.com",
+            projectId: "ms1st-math-escape-ver1"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEl18qlBAwFz37NkjcTAfeIaH6F_w_CTMkUGrfA9VoVZW8PNZubuMC7FWdnbnhsvjUug/exec";
+        const SHEET_LOGGER_URL = "https://script.google.com/macros/s/AKfycbw9ZUIarvyum2mPRG7F2Y-Z0vZms4g_NgUEihmqEYjLkWkNIBaQK5zn4OnivP_K9Qxv/exec";
+
+        let quillEditor;
+
+        // index.html의 정답 비교 로직과 반드시 동일해야 함 (DB 규칙이 이 값으로 대조 검증함)
+        function normalizeAnswer(s) {
+            return String(s).trim().toLowerCase().replace(/\s+/g, '');
+        }
+
+        window.customAlert = function(msg) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('custom-modal-overlay');
+                document.getElementById('custom-modal-msg').innerHTML = msg.replace(/\n/g, '<br>');
+                document.getElementById('custom-modal-btns').innerHTML = `<button class="modal-btn modal-btn-ok">확인</button>`;
+                overlay.style.display = 'flex';
+                overlay.querySelector('.modal-btn-ok').onclick = () => { overlay.style.display = 'none'; resolve(); };
+            });
+        };
+
+        window.customConfirm = function(msg) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('custom-modal-overlay');
+                document.getElementById('custom-modal-msg').innerHTML = msg.replace(/\n/g, '<br>');
+                document.getElementById('custom-modal-btns').innerHTML = `
+                    <button class="modal-btn modal-btn-cancel">취소</button>
+                    <button class="modal-btn modal-btn-danger">확인</button>
+                `;
+                overlay.style.display = 'flex';
+                overlay.querySelector('.modal-btn-cancel').onclick = () => { overlay.style.display = 'none'; resolve(false); };
+                overlay.querySelector('.modal-btn-danger').onclick = () => { overlay.style.display = 'none'; resolve(true); };
+            });
+        };
+
+        // 🔐 교사 로그인 / 로그아웃
+        window.teacherLogin = async function() {
+            const email = document.getElementById("login-email").value.trim();
+            const pw = document.getElementById("login-pw").value;
+            const errorEl = document.getElementById("login-error");
+            const btn = document.getElementById("login-btn");
+            errorEl.style.display = "none";
+
+            if(!email || !pw) { errorEl.innerText = "이메일과 비밀번호를 모두 입력하세요."; errorEl.style.display = "block"; return; }
+
+            btn.disabled = true; btn.innerText = "로그인 중... ⏳";
+            try {
+                await signInWithEmailAndPassword(auth, email, pw);
+            } catch(e) {
+                errorEl.innerText = "로그인 실패: 이메일 또는 비밀번호를 확인하세요.";
+                errorEl.style.display = "block";
+            }
+            btn.disabled = false; btn.innerText = "로그인";
+        };
+
+        window.teacherLogout = function() {
+            signOut(auth);
+        };
+
+        // 비밀번호 입력창에서 Enter 키를 누르면 로그인 버튼 클릭과 동일하게 동작
+        window.handleLoginKeydown = function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                teacherLogin();
+            }
+        };
+
+        let quillInitialized = false;
+
+        onAuthStateChanged(auth, async (user) => {
+            const loginScreen = document.getElementById("login-screen");
+            const dashboard = document.getElementById("dashboard-container");
+
+            if (user) {
+                loginScreen.style.display = "none";
+                dashboard.style.display = "block";
+
+                if (!quillInitialized) {
+                    window.katex = katex;
+                    quillEditor = new Quill('#editor-container', {
+                        modules: {
+                            formula: true,
+                            toolbar: [
+                                ['bold', 'underline', 'strike'],
+                                [{ 'script': 'sub'}, { 'script': 'super' }],
+                                [{ 'color': [] }, { 'background': [] }],
+                                ['formula'],
+                                ['link'],
+                                ['clean']
+                            ]
+                        },
+                        placeholder: '이곳에 문제를 입력하세요...',
+                        theme: 'snow'
+                    });
+                    quillInitialized = true;
+                }
+
+                // 스테이지 드롭다운(전체 스테이지 수)이 먼저 채워진 뒤에 문제/설명을 불러와야 함
+                await loadSettings();
+                loadQuestion();
+                loadStageDesc();
+                loadIntro();
+                monitorStudents();
+            } else {
+                loginScreen.style.display = "block";
+                dashboard.style.display = "none";
+            }
+        });
+
+        // ==========================================
+        // 📊 엑셀 양식 다운로드 및 업로드 로직
+        // ==========================================
+        window.downloadExcelTemplate = function() {
+            const data = [
+                ["스테이지(1~10)", "난이도(상/중/하)", "문제 텍스트(엔터키 허용)", "정답"]
+            ];
+            for(let i=1; i<=10; i++) {
+                data.push([i, "상", "", ""]);
+                data.push([i, "중", "", ""]);
+                data.push([i, "하", "", ""]);
+            }
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:15}, {wch:15}, {wch:50}, {wch:15}];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "방탈출_문제양식");
+            XLSX.writeFile(wb, "방탈출_문제업로드_양식.xlsx");
+        };
+
+        window.handleExcelUpload = async function(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const confirmed = await customConfirm("🚨 엑셀 데이터를 업로드하면 기존 문제들이 덮어씌워지며, 기존 문제에 첨부된 '이미지'는 모두 초기화됩니다.\n\n정말 일괄 업로드하시겠습니까?");
+            if(!confirmed) {
+                event.target.value = ""; 
+                return;
+            }
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                    let dbUpdates = {};
+                    
+                    for(let i=1; i<json.length; i++) {
+                        const row = json[i];
+                        if(!row || row.length === 0) continue;
+                        
+                        const stage = row[0];
+                        const diffStr = (row[1] || "").toString().trim();
+                        let question = row[2] || "";
+                        const answer = (row[3] || "").toString().trim();
+
+                        if(!stage) continue;
+
+                        let role = "";
+                        if(diffStr === "상") role = "high";
+                        else if(diffStr === "중") role = "mid";
+                        else if(diffStr === "하") role = "low";
+                        else continue;
+
+                        question = question.replace(/\n/g, '<br>');
+
+                        dbUpdates[`stage_${stage}/${role}/question`] = question;
+                        dbUpdates[`stage_${stage}/${role}/answer`] = answer;
+                        dbUpdates[`stage_${stage}/${role}/answerNormalized`] = normalizeAnswer(answer);
+                        dbUpdates[`stage_${stage}/${role}/imageUrl`] = "";
+                    }
+
+                    if(Object.keys(dbUpdates).length > 0) {
+                        await update(dbRef(db, 'quizzes'), dbUpdates);
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        await customAlert("✅ 30개의 문제 세팅이 엑셀로 일괄 업로드되었습니다!");
+                        loadQuestion(); 
+                    } else {
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        await customAlert("업로드할 데이터가 없거나 양식이 맞지 않습니다.");
+                    }
+                } catch(err) {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    await customAlert("❌ 처리 중 오류가 발생했습니다: " + err.message);
+                }
+                event.target.value = ""; 
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        // ==========================================
+        // ⚙️ 게임 설정 (제한 시간 / 총 스테이지 수)
+        // ==========================================
+        let currentTotalStages = 10;
+
+        // 총 스테이지 수에 맞춰 스테이지 선택 드롭다운들과 섹션 제목을 다시 그림
+        function renderStageOptions() {
+            const selects = [document.getElementById("stage-select"), document.getElementById("desc-stage-select")];
+            selects.forEach(sel => {
+                if (!sel) return;
+                const prevValue = sel.value;
+                sel.innerHTML = "";
+                for (let i = 1; i <= currentTotalStages; i++) {
+                    const opt = document.createElement("option");
+                    opt.value = i;
+                    opt.textContent = `Stage ${i}`;
+                    sel.appendChild(opt);
+                }
+                sel.value = (prevValue && Number(prevValue) <= currentTotalStages) ? prevValue : "1";
+            });
+
+            const titleEl = document.getElementById("question-section-title");
+            if (titleEl) titleEl.innerText = `📝 개별 문제 수정 (총 ${currentTotalStages}스테이지)`;
+        }
+
+        window.loadSettings = async function() {
+            const timeSnap = await get(dbRef(db, 'settings/timeLimit'));
+            document.getElementById("setting-time-limit").value = timeSnap.exists() ? timeSnap.val() : 40;
+
+            const totalSnap = await get(dbRef(db, 'settings/totalStages'));
+            currentTotalStages = totalSnap.exists() ? totalSnap.val() : 10;
+            document.getElementById("setting-total-stages").value = currentTotalStages;
+
+            const codeSnap = await get(dbRef(db, 'settings/entryCode'));
+            document.getElementById("setting-entry-code").value = codeSnap.exists() ? codeSnap.val() : "";
+
+            renderStageOptions();
+        };
+
+        window.saveTimeLimit = async function() {
+            const val = Number(document.getElementById("setting-time-limit").value);
+            if(!val || val <= 0) return await customAlert("올바른 제한 시간(분)을 입력하세요.");
+            await set(dbRef(db, 'settings/timeLimit'), val);
+            await customAlert(`✅ 제한 시간이 ${val}분으로 저장되었습니다.`);
+        };
+
+        window.saveTotalStages = async function() {
+            const val = Number(document.getElementById("setting-total-stages").value);
+            if(!val || val <= 0) return await customAlert("올바른 총 스테이지 수를 입력하세요.");
+            await set(dbRef(db, 'settings/totalStages'), val);
+            currentTotalStages = val;
+            renderStageOptions();
+            loadQuestion();
+            loadStageDesc();
+            await customAlert(`✅ 총 스테이지 수가 ${val}로 저장되었습니다.`);
+        };
+
+        window.saveEntryCode = async function() {
+            const val = document.getElementById("setting-entry-code").value.toUpperCase();
+            if (!/^[A-Z0-9]{5}$/.test(val)) {
+                return await customAlert("입장 코드는 영문 대문자와 숫자로 정확히 5자리여야 합니다.");
+            }
+            await set(dbRef(db, 'settings/entryCode'), val);
+            await customAlert(`✅ 입장 코드가 "${val}"로 저장되었습니다.`);
+        };
+
+        // ==========================================
+        // 📖 스테이지별 설명 관리 (테마 이름 + 스토리 설명)
+        // ==========================================
+        window.loadStageDesc = async function() {
+            const stage = document.getElementById("desc-stage-select").value;
+
+            const nameSnap = await get(dbRef(db, `quizzes/stage_${stage}/stageName`));
+            document.getElementById("stage-name").value = nameSnap.exists() ? nameSnap.val() : "";
+
+            const descSnap = await get(dbRef(db, `quizzes/stage_${stage}/stageDesc`));
+            document.getElementById("stage-desc").value = descSnap.exists() ? descSnap.val() : "";
+        };
+
+        window.saveStageDesc = async function() {
+            const stage = document.getElementById("desc-stage-select").value;
+            const stageName = document.getElementById("stage-name").value;
+            const stageDesc = document.getElementById("stage-desc").value;
+            const btn = document.getElementById("save-desc-btn");
+
+            btn.disabled = true; btn.innerText = "저장 중... ⏳";
+            await set(dbRef(db, `quizzes/stage_${stage}/stageName`), stageName);
+            await set(dbRef(db, `quizzes/stage_${stage}/stageDesc`), stageDesc);
+            await customAlert(`Stage ${stage}의 테마 이름/설명이 저장되었습니다. 📖`);
+            btn.disabled = false; btn.innerText = "이 스테이지 정보 저장하기";
+        };
+
+        window.downloadDescExcelTemplate = function() {
+            const data = [
+                ["스테이지(1~10)", "테마 이름", "설명"]
+            ];
+            for(let i=1; i<=10; i++) {
+                data.push([i, "", ""]);
+            }
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:15}, {wch:20}, {wch:60}];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "스테이지_설명_양식");
+            XLSX.writeFile(wb, "방탈출_스테이지설명_양식.xlsx");
+        };
+
+        window.handleDescExcelUpload = async function(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const confirmed = await customConfirm("🚨 엑셀 데이터를 업로드하면 기존 테마 이름/설명이 덮어씌워집니다.\n(문제/정답/이미지에는 영향이 없습니다)\n\n정말 일괄 업로드하시겠습니까?");
+            if(!confirmed) {
+                event.target.value = "";
+                return;
+            }
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                    let dbUpdates = {};
+
+                    for(let i=1; i<json.length; i++) {
+                        const row = json[i];
+                        if(!row || row.length === 0) continue;
+
+                        const stage = row[0];
+                        const stageName = row[1] || "";
+                        const desc = row[2] || "";
+                        if(!stage) continue;
+
+                        dbUpdates[`stage_${stage}/stageName`] = stageName;
+                        dbUpdates[`stage_${stage}/stageDesc`] = desc;
+                    }
+
+                    if(Object.keys(dbUpdates).length > 0) {
+                        await update(dbRef(db, 'quizzes'), dbUpdates);
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        await customAlert("✅ 스테이지 테마 이름/설명이 엑셀로 일괄 업로드되었습니다!");
+                        loadStageDesc();
+                    } else {
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        await customAlert("업로드할 데이터가 없거나 양식이 맞지 않습니다.");
+                    }
+                } catch(err) {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    await customAlert("❌ 처리 중 오류가 발생했습니다: " + err.message);
+                }
+                event.target.value = "";
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        // ==========================================
+        // 📜 초기 설명(인트로) 관리
+        // ==========================================
+        window.loadIntro = async function() {
+            const introSnap = await get(dbRef(db, 'intro'));
+            const intro = introSnap.exists() ? introSnap.val() : {};
+            document.getElementById("intro-title-input").value = intro.title || "";
+            document.getElementById("intro-text-input").value = intro.text || "";
+        };
+
+        window.saveIntro = async function() {
+            const title = document.getElementById("intro-title-input").value;
+            const text = document.getElementById("intro-text-input").value;
+            if(!title || !text) return await customAlert("인트로 제목과 내용을 모두 입력하세요.");
+            await set(dbRef(db, 'intro'), { title, text });
+            await customAlert("✅ 초기 설명(인트로)이 저장되었습니다.");
+        };
+
+        window.loadQuestion = async function() {
+            const stage = document.getElementById("stage-select").value;
+            const role = document.getElementById("role-select").value;
+
+            const qRef = dbRef(db, `quizzes/stage_${stage}/${role}`);
+            const snapshot = await get(qRef);
+
+            document.getElementById("q-img-file").value = "";
+            const previewBox = document.getElementById("image-preview-box");
+            const previewImg = document.getElementById("preview-img");
+
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                quillEditor.root.innerHTML = data.question || "";
+                
+                document.getElementById("q-ans").value = data.answer || "";
+                if (data.imageUrl) {
+                    previewImg.src = data.imageUrl;
+                    previewBox.style.display = "block";
+                } else {
+                    previewImg.src = "";
+                    previewBox.style.display = "none";
+                }
+            } else {
+                quillEditor.root.innerHTML = ""; 
+                document.getElementById("q-ans").value = "";
+                previewImg.src = "";
+                previewBox.style.display = "none";
+            }
+        }
+
+        window.removeImage = function() {
+            document.getElementById("q-img-file").value = "";
+            document.getElementById("preview-img").src = "";
+            document.getElementById("image-preview-box").style.display = "none";
+        }
+
+        window.saveQuestion = async function() {
+            const stage = document.getElementById("stage-select").value;
+            const role = document.getElementById("role-select").value;
+
+            const questionHTML = quillEditor.root.innerHTML;
+            const questionText = quillEditor.getText().trim(); 
+            
+            const answer = document.getElementById("q-ans").value;
+            const fileInput = document.getElementById("q-img-file");
+            const saveBtn = document.getElementById("save-btn");
+
+            if(!questionText && !questionHTML.includes('<span class="ql-formula"')) return await customAlert("문제를 입력하세요.");
+            if(!answer) return await customAlert("정답을 입력하세요.");
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = "저장 중... (잠시만 기다려주세요 ⏳)";
+            let finalImageUrl = document.getElementById("preview-img").src;
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                await new Promise((resolve, reject) => {
+                    reader.onload = async function() {
+                        const base64Data = reader.result.split(',')[1];
+                        const formData = new URLSearchParams();
+                        formData.append('fileData', base64Data);
+                        formData.append('mimeType', file.type);
+                        formData.append('filename', `stage${stage}_${role}_${Date.now()}.${file.name.split('.').pop()}`);
+                        
+                        try {
+                            const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData });
+                            const result = await response.json();
+                            if(result.url) { finalImageUrl = result.url; resolve(); } 
+                            else { reject("업로드 에러 발생"); }
+                        } catch (err) { reject(err); }
+                    };
+                }).catch(async err => {
+                    await customAlert("업로드에 실패했습니다. 스크립트 URL을 확인해 주세요.");
+                    saveBtn.disabled = false; saveBtn.innerText = "현재 화면 문제 개별 저장하기";
+                    return; 
+                });
+            } else if (document.getElementById("image-preview-box").style.display === "none") {
+                finalImageUrl = "";
+            }
+
+            await set(dbRef(db, `quizzes/stage_${stage}/${role}`), { question: questionHTML, imageUrl: finalImageUrl, answer: answer, answerNormalized: normalizeAnswer(answer) });
+            
+            await customAlert(`${stage}스테이지 문제가 성공적으로 저장되었습니다. 🎉`);
+            saveBtn.disabled = false; saveBtn.innerText = "현재 화면 문제 개별 저장하기";
+            loadQuestion(); 
+        }
+
+        // 🗑️ 현재 난이도 문제 개별 삭제
+        window.deleteQuestionData = async function() {
+            const stage = document.getElementById("stage-select").value;
+            const role = document.getElementById("role-select").value;
+            const roleName = role === 'high' ? '🔥 상' : (role === 'mid' ? '⚡ 중' : '🌱 하');
+
+            const confirmed = await customConfirm(`정말 [Stage ${stage} - ${roleName}] 의\n문제와 정답 데이터를 삭제하시겠습니까?`);
+            if(!confirmed) return;
+
+            const btn = document.getElementById("del-data-btn");
+            btn.disabled = true; btn.innerText = "데이터 삭제 중... ⏳";
+
+            try {
+                await set(dbRef(db, `quizzes/stage_${stage}/${role}`), null);
+                await customAlert("해당 문제가 성공적으로 삭제되었습니다. 🗑️");
+                loadQuestion(); 
+            } catch(e) {
+                await customAlert("❌ 삭제 중 오류가 발생했습니다: " + e.message);
+            }
+            
+            btn.disabled = false; btn.innerText = "현재 선택된 문제 삭제";
+        }
+
+        // 🗑️ 선택한 스테이지 전체 삭제 (상/중/하/테마)
+        window.deleteStageData = async function() {
+            const stage = document.getElementById("stage-select").value;
+
+            const confirmed = await customConfirm(`🚨 경고: [Stage ${stage}] 의 모든 문제(상, 중, 하) 및 테마 이름이 완전히 삭제됩니다.\n\n정말 삭제하시겠습니까?`);
+            if(!confirmed) return;
+
+            const btn = document.getElementById("del-stage-btn");
+            btn.disabled = true; btn.innerText = "스테이지 전체 삭제 중... ⏳";
+
+            try {
+                await set(dbRef(db, `quizzes/stage_${stage}`), null);
+                await customAlert(`Stage ${stage}의 모든 데이터가 성공적으로 삭제되었습니다. 🗑️`);
+                loadQuestion(); 
+            } catch(e) {
+                await customAlert("❌ 삭제 중 오류가 발생했습니다: " + e.message);
+            }
+            
+            btn.disabled = false; btn.innerText = "선택한 스테이지 전체 삭제";
+        }
+
+        // 🗑️ 개별 조 접속 데이터 삭제
+        window.deleteSingleRoom = async function(roomKey) {
+            const displayName = roomKey.replace('room_', '') + "조";
+            const confirmed = await customConfirm(`정말 [${displayName}]의 데이터를 삭제하시겠습니까?`);
+            if(!confirmed) return;
+
+            try {
+                await set(dbRef(db, `rooms/${roomKey}`), null);
+                await customAlert(`✅ [${displayName}] 데이터가 성공적으로 삭제되었습니다.`);
+            } catch(e) {
+                await customAlert("❌ 삭제 중 오류가 발생했습니다: " + e.message);
+            }
+        }
+
+        function monitorStudents() {
+            onValue(dbRef(db, 'rooms'), (snapshot) => {
+                const monitorBoard = document.getElementById("monitor-board");
+                monitorBoard.innerHTML = ""; 
+                if (!snapshot.exists()) {
+                    monitorBoard.innerHTML = "<p style='color:#9aaebd; text-align:center; padding: 20px 0;'>현재 접속 중인 조가 없습니다. 💤</p>";
+                    return;
+                }
+                const statusLabelMap = {
+                    waiting: "역할 정하는 중",
+                    playing: "게임 진행 중",
+                    cleared: "클리어 완료",
+                    failed: "실패 (시간 초과)"
+                };
+
+                snapshot.forEach(childSnapshot => {
+                    const roomName = childSnapshot.key;
+                    const roomData = childSnapshot.val();
+                    const roomDisplayName = roomName.replace('room_', '') + "조";
+                    const isWaiting = roomData.status === "waiting";
+
+                    const statusLabel = statusLabelMap[roomData.status] || (roomData.status || '-');
+                    const locationLabel = isWaiting ? "대기실" : `Stage ${roomData.currentStage || 1}`;
+
+                    let html = `<div class="student-data">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h4 style="margin: 0;">${roomDisplayName} <span style="font-size:14px; color:#728496; font-weight:normal;">(상태: ${statusLabel} / 위치: ${locationLabel})</span></h4>
+                            <button class="del-room-btn" onclick="deleteSingleRoom('${roomName}')">조 삭제</button>
+                        </div>`;
+                    ['high', 'mid', 'low'].forEach(r => {
+                        const p = roomData.players ? roomData.players[r] : null;
+                        if(p && p.name) {
+                            const roleName = r === 'high' ? '🔥상' : (r === 'mid' ? '⚡중' : '🌱하');
+                            if (isWaiting) {
+                                html += `<p>- ${roleName} (${p.name}): <strong><span style="color:#4dadff;">🙋 준비 완료</span></strong></p>`;
+                            } else {
+                                html += `<p>- ${roleName} (${p.name}):
+                                    <strong>${p.isSolved ? '<span style="color:#2ecc71;">✅ 정답</span>' : '<span style="color:#e74c3c;">❌ 푸는 중</span>'}</strong>
+                                    <span style="color:#888;">(시도: ${p.attempts || 0}회, 소요시간: ${p.solveTime || 0}초)</span></p>`;
+                            }
+                        }
+                    });
+                    html += `</div>`;
+                    monitorBoard.innerHTML += html;
+                });
+            });
+        }
+
+        window.resetAndSaveData = async function() {
+            const confirmed = await customConfirm("🚨 경고: 모든 학생의 화면이 초기화(로그아웃)됩니다.\n데이터를 시트에 저장하고 방을 삭제하시겠습니까?");
+            if(!confirmed) return;
+
+            const btn = document.getElementById("reset-btn");
+            btn.disabled = true; btn.innerText = "데이터 저장 및 초기화 진행 중... ⏳";
+
+            try {
+                const roomsSnap = await get(dbRef(db, 'rooms'));
+                if(roomsSnap.exists()) {
+                    const roomsData = roomsSnap.val();
+                    let exportData = [];
+                    const timestamp = new Date().toLocaleString('ko-KR');
+
+                    for(let roomKey in roomsData) {
+                        let room = roomsData[roomKey];
+                        ['high', 'mid', 'low'].forEach(role => {
+                            if(room.players && room.players[role] && room.players[role].name) {
+                                let p = room.players[role];
+                                exportData.push([
+                                    timestamp, roomKey.replace('room_', '') + "조", 
+                                    role === 'high' ? '🔥상' : (role === 'mid' ? '⚡중' : '🌱하'), 
+                                    p.name, room.currentStage || 1, p.isSolved ? "정답" : "미해결", p.attempts || 0, p.solveTime || 0
+                                ]);
+                            }
+                        });
+                    }
+                    if(exportData.length > 0) {
+                        const formData = new URLSearchParams(); formData.append('payload', JSON.stringify(exportData));
+                        await fetch(SHEET_LOGGER_URL, { method: 'POST', body: formData });
+                    }
+                }
+                await set(dbRef(db, 'rooms'), null);
+                await customAlert("✅ 구글 시트 저장 및 전체 접속 초기화가 완료되었습니다.");
+            } catch(e) {
+                await customAlert("❌ 오류 발생: " + e.message + "\n(스프레드시트 URL을 확인해 주세요)");
+            }
+            btn.disabled = false; btn.innerText = "🚨 전체 게임 종료 및 데이터 백업";
+        }
+    </script>
+</head>
+<body>
+    <div id="login-screen">
+        <h2>🔐 교사 로그인</h2>
+        <p style="color:#888; margin-bottom: 20px; font-size: 14px;">교사 계정으로 로그인해야 대시보드를 사용할 수 있습니다.</p>
+        <label>이메일</label>
+        <input type="text" id="login-email" placeholder="teacher@example.com" onkeydown="handleLoginKeydown(event)">
+        <label>비밀번호</label>
+        <input type="password" id="login-pw" placeholder="비밀번호" onkeydown="handleLoginKeydown(event)">
+        <button id="login-btn" class="action-btn" onclick="teacherLogin()" style="margin-top: 20px;">로그인</button>
+        <p id="login-error" class="login-error"></p>
+    </div>
+
+    <div id="dashboard-container">
+        <div class="topbar">
+            <button class="logout-btn" onclick="teacherLogout()">로그아웃</button>
+        </div>
+        <div class="container">
+        <div class="panel">
+            <h2>⚙️ 게임 설정</h2>
+            <div class="settings-row-wide">
+                <div class="settings-unit">
+                    <label>제한 시간 (분)</label>
+                    <div class="settings-input-group">
+                        <input type="number" id="setting-time-limit" min="1" placeholder="예: 40">
+                        <button class="settings-save-btn" onclick="saveTimeLimit()">저장</button>
+                    </div>
+                </div>
+                <div class="settings-unit">
+                    <label>총 스테이지 수</label>
+                    <div class="settings-input-group">
+                        <input type="number" id="setting-total-stages" min="1" max="50" placeholder="예: 10">
+                        <button class="settings-save-btn" onclick="saveTotalStages()">저장</button>
+                    </div>
+                </div>
+                <div class="settings-unit">
+                    <label>입장 코드 (영문 대문자+숫자 5자리)</label>
+                    <div class="settings-input-group">
+                        <input type="text" id="setting-entry-code" maxlength="5" placeholder="예: A1B2C" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+                        <button class="settings-save-btn" onclick="saveEntryCode()">저장</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="intro-settings">
+                <label>초기 설명(인트로) 제목 — 학생이 게임 시작 전 처음 보는 화면</label>
+                <input type="text" id="intro-title-input" placeholder="예: 학교 탈출 미션">
+
+                <label>초기 설명(인트로) 내용 (전체적인 테마/스토리)</label>
+                <textarea id="intro-text-input" class="themed-textarea" placeholder="예: 어느 날 갑자기 학교에 갇혀버렸다..."></textarea>
+
+                <button class="settings-save-btn" onclick="saveIntro()" style="width: 100%; margin-top: 12px;">인트로 저장</button>
+            </div>
+        </div>
+
+        <div class="row-half">
+        <div class="panel monitor-panel">
+            <button id="reset-btn" class="reset-btn" onclick="resetAndSaveData()">🚨 전체 게임 종료 및 데이터 백업</button>
+            <h2>📊 실시간 조별 모니터링</h2>
+            <div id="monitor-board" class="monitor-board-flex">
+                데이터를 불러오는 중...
+            </div>
+        </div>
+
+        <div class="right-column">
+        <div class="panel">
+            <h2>📖 스테이지별 설명 관리</h2>
+
+            <div class="excel-box">
+                <h3>📂 엑셀로 한 번에 세팅하기 (설명)</h3>
+                <p>양식을 다운로드하여 스테이지별 테마 이름/설명을 작성한 뒤 업로드하세요.</p>
+                <div class="excel-btn-group">
+                    <button class="excel-btn btn-download" onclick="downloadDescExcelTemplate()">📥 양식 다운로드</button>
+                    <input type="file" id="desc-excel-file" accept=".xlsx, .xls" style="display:none;" onchange="handleDescExcelUpload(event)">
+                    <button class="excel-btn btn-upload" onclick="document.getElementById('desc-excel-file').click()">📤 엑셀 업로드</button>
+                </div>
+            </div>
+
+            <label>스테이지 선택</label>
+            <select id="desc-stage-select" onchange="loadStageDesc()"></select>
+
+            <label>스테이지 테마 이름 (예: 1층 복도)</label>
+            <input type="text" id="stage-name" placeholder="학생들에게 보여질 스테이지 이름">
+
+            <label>스테이지 스토리 설명 (선택사항, 학생 화면 상단에 표시)</label>
+            <textarea id="stage-desc" class="themed-textarea" placeholder="예: 어두운 복도에 낡은 칠판이 놓여 있다..."></textarea>
+
+            <button id="save-desc-btn" class="action-btn" onclick="saveStageDesc()">이 스테이지 정보 저장하기</button>
+        </div>
+
+        <div class="panel">
+            <h2 id="question-section-title">📝 개별 문제 수정 (총 10스테이지)</h2>
+
+            <div class="excel-box">
+                <h3>📂 엑셀로 한 번에 세팅하기 (문제)</h3>
+                <p>양식을 다운로드하여 30문제를 모두 작성한 뒤 업로드하세요.<br>(* 업로드 시 기존 데이터 및 이미지는 초기화됩니다)</p>
+                <div class="excel-btn-group">
+                    <button class="excel-btn btn-download" onclick="downloadExcelTemplate()">📥 양식 다운로드</button>
+                    <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelUpload(event)">
+                    <button class="excel-btn btn-upload" onclick="document.getElementById('excel-file').click()">📤 엑셀 업로드</button>
+                </div>
+            </div>
+
+            <label>스테이지 선택</label>
+            <select id="stage-select" onchange="loadQuestion()"></select>
+
+            <label>난이도 역할 선택</label>
+            <select id="role-select" onchange="loadQuestion()">
+                <option value="high">🔥 상 (팀장)</option><option value="mid">⚡ 중 (부팀장)</option><option value="low">🌱 하 (대원)</option>
+            </select>
+            
+            <label>문제 텍스트</label>
+            <div id="editor-container"></div>
+
+            <label>참고 이미지 업로드 (선택사항)</label>
+            <input type="file" id="q-img-file" accept="image/png, image/jpeg, image/jpg, image/gif">
+            <div id="image-preview-box" class="image-preview-box">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: #728496;">현재 적용된 이미지</p>
+                <img id="preview-img" src=""><br>
+                <button type="button" class="del-img-btn" onclick="removeImage()">이미지 지우기</button>
+            </div>
+            
+            <label>정답 (숫자 또는 텍스트)</label>
+            <input type="text" id="q-ans" placeholder="정답을 입력하세요">
+            
+            <button id="save-btn" class="action-btn" onclick="saveQuestion()">현재 화면 문제 개별 저장하기</button>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="del-data-btn" class="delete-btn" style="flex: 1;" onclick="deleteQuestionData()">현재 선택된 문제 삭제</button>
+                <button id="del-stage-btn" class="delete-stage-btn" style="flex: 1;" onclick="deleteStageData()">선택한 스테이지 전체 삭제</button>
+            </div>
+        </div>
+        </div>
+        </div>
+        </div>
+    </div>
+
+    <div id="custom-modal-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <p id="custom-modal-msg"></p>
+            <div id="custom-modal-btns" class="modal-btn-group"></div>
+        </div>
+    </div>
+
+    <div id="loading-overlay" class="modal-overlay" style="display: none; flex-direction: column;">
+        <div class="modal-box">
+            <p style="font-size: 20px; font-family: 'Gowun Dodum', sans-serif; margin: 0;">데이터 처리 중... ⏳</p>
+        </div>
+    </div>
+</body>
+</html>

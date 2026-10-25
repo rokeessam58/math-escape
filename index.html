@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중1 수학 복습 방탈출</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Gothic:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            margin: 0; padding: 0;
+            background-color: #fdfaf6; /* 따뜻한 파스텔 아이보리 */
+            color: #4a4a4a;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; box-sizing: border-box;
+        }
+        .container {
+            width: 92%; max-width: 480px;
+            background: #ffffff; padding: 30px 25px;
+            border-radius: 24px; box-shadow: 0 12px 36px rgba(162, 185, 214, 0.15);
+            border: 2px solid #f0eee9;
+            text-align: center; box-sizing: border-box;
+            position: relative; overflow: hidden;
+        }
+        .screen { display: none; } 
+        .active { display: block; animation: fadeIn 0.4s ease-in-out; } 
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { font-family: 'Gowun Dodum', sans-serif; color: #7ba4db; margin-top: 0; font-size: 26px; }
+        h3 { color: #f2b5a5; font-family: 'Gowun Dodum', sans-serif; }
+        
+        input {
+            width: 100%; padding: 14px; margin: 8px 0;
+            border: 2px solid #e2e8f0; border-radius: 12px;
+            background: #f8fafc; color: #333; font-size: 16px; box-sizing: border-box;
+            font-family: 'Nanum Gothic', sans-serif; transition: 0.3s;
+        }
+        input:focus { border-color: #a3c4f3; outline: none; background: #fff; }
+        input:disabled { background: #eef2f6; color: #888; border-color: #dbe4ed; }
+        
+        button {
+            width: 100%; padding: 14px; margin-top: 15px;
+            background: #a3c4f3; color: #2b3a4a; font-weight: bold;
+            border: none; border-radius: 12px; font-size: 16px; 
+            font-family: 'Gowun Dodum', sans-serif; cursor: pointer; transition: 0.2s;
+        }
+        button:hover:not(:disabled) { background: #8bb4ec; transform: translateY(-2px); }
+        button:disabled { background: #d3dfeb; color: #9aaebd; cursor: not-allowed; transform: none; }
+        
+        /* 버튼 컬러 옵션들 */
+        .btn-danger { background: #ffb5a7; color: #7a3b3b; }
+        .btn-danger:hover:not(:disabled) { background: #fca392; }
+        .btn-warning { background: #ffe4a0; color: #7a5c1a; margin-top: 20px;}
+        .btn-warning:hover:not(:disabled) { background: #fcd572; }
+        .btn-outline { background: #fff; color: #555; border: 2px solid #e2e8f0; }
+
+        /* 대기실 요소 */
+        .role-btn {
+            width: 100%; background: #f8fbff; color: #555; border: 2px solid #e2e8f0;
+            padding: 18px 15px; margin: 10px 0; border-radius: 12px;
+            text-align: left; display: flex; justify-content: space-between; align-items: center;
+            font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .role-btn.selected { border-color: #a3c4f3; background: #eef4fc; box-shadow: 0 4px 12px rgba(163,196,243,0.3); color: #2b3a4a; font-weight:bold; }
+        .role-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #f1f5f9; }
+        .status-text { font-size: 14px; color: #888; font-weight: normal; }
+        .ready-player { color: #4dadff; font-weight: bold; }
+
+        /* 초기 설명(인트로) 화면 */
+        .intro-box {
+            background: #fdfcf0; padding: 20px; border-radius: 15px;
+            margin: 15px 0; text-align: left; border-left: 5px solid #ffe4a0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); line-height: 1.6;
+        }
+        .intro-box p { margin: 0; white-space: pre-line; }
+
+        /* 게임 요소 */
+        .timer-banner {
+            font-family: 'Gowun Dodum', sans-serif; font-size: 22px; font-weight: bold; 
+            color: #c0392b; background: #fceceb; padding: 12px; border-radius: 12px; margin-bottom: 20px;
+            border: 1px dashed #f5b7b1;
+        }
+        .quiz-box {
+            background: #fdfcf0; padding: 20px; border-radius: 15px;
+            margin: 15px 0; text-align: left; border-left: 5px solid #ffe4a0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); line-height: 1.6;
+        }
+        .team-status-board {
+            background: #f4f7fa; padding: 15px; border-radius: 15px; margin-top: 25px; border: 1px solid #eef2f6;
+        }
+        .team-status-board h4 { font-family: 'Gowun Dodum', sans-serif; margin-top:0; color: #5c7285; }
+        .team-member-row {
+            display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 15px; color: #444;
+        }
+        .badge { padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: bold; font-family: 'Gowun Dodum', sans-serif;}
+        .badge.solved { background: #b6e3d4; color: #2c5e4b; }
+        .badge.unsolved { background: #ffb5a7; color: #6a2c2c; }
+        
+        .penalty-text { color: #e74c3c; font-weight: bold; margin-top: 5px; font-size: 14px; display: none; }
+        
+        .ending-title { font-family: 'Gowun Dodum', sans-serif; font-size: 32px; font-weight: bold; margin-bottom: 15px; }
+        .clear-text { color: #7ba4db; }
+        .fail-text { color: #f19eb5; }
+
+        /* 팝업 모달 & 로딩 오버레이 스타일 */
+        .modal-overlay, .loading-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.35); backdrop-filter: blur(6px);
+            z-index: 10000; align-items: center; justify-content: center;
+        }
+        .modal-box, .loading-box {
+            background: #ffffff; padding: 30px 35px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center;
+            max-width: 380px; width: 85%; font-family: 'Nanum Gothic', sans-serif;
+        }
+        .modal-box p, .loading-box p {
+            font-size: 16px; color: #435b71; margin: 0 0 20px 0; line-height: 1.5; font-weight: bold;
+        }
+        .loading-box p { margin: 0; font-family: 'Gowun Dodum', sans-serif; font-size: 20px; }
+        .modal-btn-group { display: flex; gap: 10px; justify-content: center; }
+        .modal-btn {
+            padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer;
+            font-weight: bold; font-size: 14px; flex: 1; transition: 0.2s;
+        }
+        .modal-btn-ok { background: #a3c4f3; color: #2c3e50; }
+        .modal-btn-cancel { background: #e2e8f0; color: #64748b; }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8h3jceC6gmoU24plIimhvEOJPUWrYRNg",
+            authDomain: "ms1st-math-escape-ver1.firebaseapp.com",
+            databaseURL: "https://ms1st-math-escape-ver1-default-rtdb.firebaseio.com",
+            projectId: "ms1st-math-escape-ver1"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let myRoom = ""; let myName = ""; let myRole = ""; let currentStageNum = 1;
+        let timerInterval = null; let currentRoomData = null; let currentAttempts = 0;
+        let GAME_LIMIT_TIME = 40 * 60 * 1000; // 기본 40분
+        let TOTAL_STAGES = 10; // 기본 10스테이지 (교사가 settings/totalStages로 조절 가능)
+        let quizzes = {};
+
+        function normalizeAnswer(s) {
+            return String(s).trim().toLowerCase().replace(/\s+/g, '');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        window.onload = function() {
+            // 제한 시간 연동
+            onValue(ref(db, 'settings/timeLimit'), (snapshot) => {
+                const limit = snapshot.val();
+                if(limit) GAME_LIMIT_TIME = limit * 60 * 1000;
+            });
+
+            onValue(ref(db, 'settings/totalStages'), (snapshot) => {
+                const total = snapshot.val();
+                if(total) TOTAL_STAGES = total;
+            });
+
+            onValue(ref(db, 'quizzes'), (snapshot) => {
+                quizzes = snapshot.val() || {};
+                // 게임 화면을 보고 있는 도중 선생님이 문제를 추가/수정하면 즉시 반영
+                if (document.getElementById('game-screen').classList.contains('active') && currentRoomData) {
+                    enterGameScreen(currentRoomData);
+                }
+            });
+            
+            const savedRoom = localStorage.getItem("roomNum");
+            const savedName = localStorage.getItem("userName");
+            const savedRole = localStorage.getItem("userRole");
+            
+            if (savedRoom && savedName) {
+                myRoom = savedRoom; myName = savedName; myRole = savedRole || "";
+                enterLobby();
+            } else {
+                showScreen("login-screen");
+            }
+        }
+
+        window.handleLogin = async function() {
+            const roomInput = document.getElementById("room-input").value.trim();
+            const nameInput = document.getElementById("name-input").value.trim();
+            if(!roomInput || !nameInput) return await customAlert("조 번호와 이름을 모두 입력해 주세요.");
+            
+            myRoom = roomInput; myName = nameInput;
+            localStorage.setItem("roomNum", myRoom);
+            localStorage.setItem("userName", myName);
+            
+            const roomRef = ref(db, `rooms/room_${myRoom}`);
+            const snapshot = await get(roomRef);
+            if (!snapshot.exists()) {
+                await set(roomRef, {
+                    status: "waiting", currentStage: 1, startTime: 0, stageStartTime: 0,
+                    players: { high: "", mid: "", low: "" }
+                });
+            }
+            enterLobby();
+        }
+
+        function enterLobby() {
+            showScreen("lobby-screen");
+            document.getElementById("lobby-title").innerText = `${myRoom}조 대기실`;
+            
+            onValue(ref(db, `rooms/room_${myRoom}`), async (snapshot) => {
+                const roomData = snapshot.val();
+                
+                // 🔥 교사가 일괄 초기화(DB 삭제)를 한 경우 캐시 비우고 쫓아내기!
+                if (!roomData) {
+                    await customAlert("선생님에 의해 게임이 강제 종료/초기화 되었습니다. 처음 화면으로 돌아갑니다.");
+                    localStorage.clear(); clearInterval(timerInterval); location.reload(); 
+                    return;
+                }
+                
+                currentRoomData = roomData;
+                if (roomData.status === "playing") {
+                    showWaitingForLeaderModal(false); // 혹시 떠 있던 "팀장 대기" 모달 닫기
+                    // 이 학생이 이 방에서 아직 초기 설명(인트로)을 안 봤다면 게임 화면 대신 인트로부터 보여줌
+                    if (!localStorage.getItem(`introSeen_${myRoom}`)) {
+                        if (!document.getElementById('intro-screen').classList.contains('active')) {
+                            showIntroScreen();
+                        }
+                    } else {
+                        enterGameScreen(roomData);
+                    }
+                    return;
+                }
+                else if (roomData.status === "cleared") { showWaitingForLeaderModal(false); showEndingScreen("clear"); return; }
+                else if (roomData.status === "failed") { showWaitingForLeaderModal(false); showEndingScreen("fail"); return; }
+
+                updateLobbyUI(roomData.players);
+
+                // 대기실(waiting) 상태: 팀장이 입장 코드를 입력하는 중이면 나머지 조원에게 대기 모달 표시
+                showWaitingForLeaderModal(roomData.awaitingCode === true && myRole !== 'high');
+            });
+        }
+
+        async function showIntroScreen() {
+            const introSnap = await get(ref(db, 'intro'));
+            const intro = introSnap.exists() ? introSnap.val() : {};
+            document.getElementById('intro-title').innerText = intro.title || "미션 시작!";
+            document.getElementById('intro-text').innerText = intro.text || "선생님이 아직 이야기를 등록하지 않았어요. 그래도 탐험을 시작해 볼까요?";
+            showScreen('intro-screen');
+        }
+
+        window.startFromIntro = function() {
+            localStorage.setItem(`introSeen_${myRoom}`, "true");
+            if (currentRoomData) enterGameScreen(currentRoomData);
+        }
+
+        function updateLobbyUI(players) {
+            const roles = ['high', 'mid', 'low'];
+            let readyCount = 0; let serverHasMyRole = false;
+
+            roles.forEach(role => {
+                const btn = document.getElementById(`btn-${role}`);
+                const status = document.getElementById(`status-${role}`);
+                if (players && players[role] && players[role].name) {
+                    status.innerHTML = `👑 <span class="ready-player">${players[role].name}</span> 완료`;
+                    readyCount++;
+                    if (players[role].name === myName) {
+                        btn.disabled = false; btn.classList.add('selected');
+                        myRole = role; localStorage.setItem("userRole", role); serverHasMyRole = true;
+                    } else {
+                        btn.disabled = true; btn.classList.remove('selected');
+                    }
+                } else {
+                    status.innerText = "대기 중...";
+                    btn.disabled = false; btn.classList.remove('selected');
+                }
+            });
+
+            if (!serverHasMyRole) { myRole = ""; localStorage.removeItem("userRole"); }
+
+            const startBtn = document.getElementById("start-game-btn");
+            if (readyCount === 3) {
+                if (myRole === 'high') {
+                    startBtn.disabled = false; startBtn.innerText = "게임 시작하기";
+                } else {
+                    startBtn.disabled = true; startBtn.innerText = "준비 완료";
+                }
+            } else {
+                startBtn.disabled = true; startBtn.innerText = `팀원을 기다리는 중... (${readyCount}/3)`;
+            }
+        }
+
+        window.selectRole = async function(role) {
+            if (!myRoom || !myName) return;
+            if (myRole === role) {
+                if (await customConfirm("선택한 역할을 취소하시겠습니까?")) {
+                    await set(ref(db, `rooms/room_${myRoom}/players/${role}`), null);
+                    myRole = ""; localStorage.removeItem("userRole");
+                }
+                return;
+            }
+
+            // 🔒 트랜잭션으로 원자적 선점: 두 학생이 동시에 같은 역할을 눌러도 한 명만 성공
+            const roleRef = ref(db, `rooms/room_${myRoom}/players/${role}`);
+            const result = await runTransaction(roleRef, (currentData) => {
+                // 방 생성 시 players.high/mid/low는 null이 아니라 빈 문자열("")로 초기화되므로
+                // falsy 체크(!currentData)로 "아직 아무도 선택 안 함"을 판정해야 함
+                if (!currentData || !currentData.name) {
+                    return { name: myName, isReady: true, isSolved: false, attempts: 0, solveTime: 0 };
+                }
+                return; // 이미 다른 사람이 선점 -> 트랜잭션 중단
+            });
+
+            if (!result.committed) {
+                await customAlert("앗, 방금 다른 조원이 먼저 그 역할을 선택했어요. 다른 난이도를 선택해 주세요.");
+                return;
+            }
+
+            if (myRole && myRole !== role) await set(ref(db, `rooms/room_${myRoom}/players/${myRole}`), null);
+            myRole = role; localStorage.setItem("userRole", role);
+        }
+
+        window.startGame = async function() {
+            if (myRole !== 'high') return; // 안전장치: 입장 코드는 팀장만 입력 가능
+
+            // 팀원들 화면에 "팀장이 입력 중" 대기 모달을 띄우기 위한 플래그
+            await update(ref(db, `rooms/room_${myRoom}`), { awaitingCode: true });
+
+            const code = await customPrompt("선생님께 안내받은 입장 코드를 입력하세요.");
+
+            if (code === null) {
+                await update(ref(db, `rooms/room_${myRoom}`), { awaitingCode: false });
+                return; // 취소함
+            }
+
+            const correctSnap = await get(ref(db, 'settings/entryCode'));
+            const correctCode = correctSnap.exists() ? correctSnap.val() : "";
+
+            if (!correctCode) {
+                await update(ref(db, `rooms/room_${myRoom}`), { awaitingCode: false });
+                await customAlert("선생님이 아직 입장 코드를 설정하지 않았습니다. 선생님께 문의해 주세요.");
+                return;
+            }
+
+            if (code !== correctCode) {
+                await update(ref(db, `rooms/room_${myRoom}`), { awaitingCode: false });
+                await customAlert("입장 코드가 올바르지 않습니다. 다시 확인해 주세요.");
+                return;
+            }
+
+            const now = Date.now();
+            update(ref(db, `rooms/room_${myRoom}`), { status: "playing", currentStage: 1, startTime: now, stageStartTime: now, awaitingCode: false });
+        }
+
+        window.handleLogout = async function() {
+            if (await customConfirm("대기실에서 나가시겠습니까?")) {
+                if (myRoom && myRole) await set(ref(db, `rooms/room_${myRoom}/players/${myRole}`), null);
+                clearInterval(timerInterval); localStorage.clear();
+                myRoom = ""; myName = ""; myRole = "";
+                showScreen("login-screen");
+            }
+        }
+
+        // ================= 본 게임 로직 =================
+        function enterGameScreen(roomData) {
+            showScreen("game-screen");
+            const stageNum = roomData.currentStage;
+            const stageKey = `stage_${stageNum}`;
+
+            // 설정된 총 스테이지 수를 넘어서면 진짜 클리어
+            if (stageNum > TOTAL_STAGES) {
+                update(ref(db, `rooms/room_${myRoom}`), { status: "cleared" });
+                return;
+            }
+
+            // 총 스테이지 범위 안인데 문제가 아직(또는 일시적으로) 없는 경우 -> 클리어 처리하지 않고 대기
+            if (!quizzes[stageKey] || !quizzes[stageKey][myRole]) {
+                document.getElementById("game-stage-title").innerText = `Stage ${stageNum}`;
+                document.getElementById("game-stage-desc").style.display = "none";
+                document.getElementById("quiz-text").innerText = "선생님이 아직 이 스테이지의 문제를 등록하지 않았어요. 잠시만 기다려 주세요...";
+                document.getElementById("quiz-img").style.display = "none";
+                return;
+            }
+
+            if (currentStageNum !== stageNum) {
+                currentStageNum = stageNum; currentAttempts = 0; 
+                const inputEl = document.getElementById("answer-input");
+                const btnEl = document.getElementById("submit-btn");
+                const penaltyEl = document.getElementById("penalty-countdown");
+
+                inputEl.disabled = false; inputEl.value = "";
+                btnEl.disabled = false; btnEl.innerText = "정답 제출";
+                if (penaltyEl) penaltyEl.style.display = "none";
+            }
+
+            const currentStageData = quizzes[stageKey];
+            document.getElementById("game-stage-title").innerText = `Stage ${stageNum} : ${currentStageData.stageName || "비밀의 방"}`;
+            
+            // 스토리(설명) 반영 부분
+            const descEl = document.getElementById("game-stage-desc");
+            if(currentStageData.stageDesc) {
+                descEl.innerText = currentStageData.stageDesc;
+                descEl.style.display = "block";
+            } else {
+                descEl.style.display = "none";
+            }
+
+            if(myRole && currentStageData[myRole]) {
+                // 팀원 상태 갱신 때마다 같은 내용을 다시 넣으면 이미지가 재로딩되며 깜빡이므로, 값이 바뀐 경우에만 반영
+                const quizTextEl = document.getElementById("quiz-text");
+                if (quizTextEl.dataset.rendered !== currentStageData[myRole].question) {
+                    quizTextEl.innerHTML = currentStageData[myRole].question;
+                    quizTextEl.dataset.rendered = currentStageData[myRole].question;
+                }
+                const imgEl = document.getElementById("quiz-img");
+                const imageUrl = currentStageData[myRole].imageUrl;
+                if(imageUrl) {
+                    if (imgEl.dataset.loadedUrl !== imageUrl) {
+                        imgEl.src = imageUrl;
+                        imgEl.dataset.loadedUrl = imageUrl;
+                    }
+                    imgEl.style.display = "block";
+                } else {
+                    imgEl.style.display = "none";
+                    imgEl.dataset.loadedUrl = "";
+                }
+                
+                if(roomData.players[myRole].isSolved) {
+                    document.getElementById("answer-input").disabled = true;
+                    document.getElementById("answer-input").value = currentStageData[myRole].answer;
+                    document.getElementById("submit-btn").disabled = true;
+                    document.getElementById("submit-btn").innerText = "제출 완료";
+                }
+            }
+
+            if (!timerInterval && roomData.startTime > 0) startGlobalTimer(roomData.startTime);
+            updateTeamStatusBoard(roomData.players);
+        }
+
+        function startGlobalTimer(startTime) {
+            const timerEl = document.getElementById("time-display");
+            timerInterval = setInterval(() => {
+                const remainingTime = GAME_LIMIT_TIME - (Date.now() - startTime);
+                if (remainingTime <= 0) {
+                    clearInterval(timerInterval); timerEl.innerText = "00:00";
+                    update(ref(db, `rooms/room_${myRoom}`), { status: "failed" });
+                } else {
+                    const min = Math.floor(remainingTime / 60000);
+                    const sec = Math.floor((remainingTime % 60000) / 1000);
+                    timerEl.innerText = `${min < 10 ? '0'+min : min}:${sec < 10 ? '0'+sec : sec}`;
+                }
+            }, 1000);
+        }
+
+        function updateTeamStatusBoard(players) {
+            const roles = { high: "🔥 상", mid: "⚡ 중", low: "🌱 하" };
+            let allClear = true;
+
+            Object.keys(roles).forEach(role => {
+                const pInfo = players[role];
+                const nameEl = document.getElementById(`status-name-${role}`);
+                const badgeEl = document.getElementById(`status-badge-${role}`);
+
+                if (pInfo) {
+                    nameEl.innerText = `${roles[role]}: ${pInfo.name}`;
+                    if(pInfo.isSolved) { badgeEl.innerText = "정답"; badgeEl.className = "badge solved"; } 
+                    else { badgeEl.innerText = "푸는 중"; badgeEl.className = "badge unsolved"; allClear = false; }
+                } else {
+                    nameEl.innerText = `${roles[role]}: 탈주함`;
+                    badgeEl.innerText = "공석"; badgeEl.className = "badge unsolved"; allClear = false;
+                }
+            });
+
+            const nextBtn = document.getElementById("next-stage-btn");
+            if (allClear) {
+                nextBtn.disabled = false; nextBtn.innerText = "다음 구역으로 탈출하기! 🎉";
+            } else {
+                nextBtn.disabled = true; nextBtn.innerText = "모든 조원이 정답을 맞춰야 탈출 가능합니다";
+            }
+        }
+
+        window.submitAnswer = async function() {
+            const inputEl = document.getElementById("answer-input");
+            const btnEl = document.getElementById("submit-btn");
+            const penaltyEl = document.getElementById("penalty-countdown");
+            
+            const userAns = inputEl.value.trim();
+            if(!userAns) return await customAlert("답안을 입력하세요.");
+
+            const rightAns = quizzes[`stage_${currentStageNum}`][myRole].answer;
+            const myPlayerRef = ref(db, `rooms/room_${myRoom}/players/${myRole}`);
+            currentAttempts++; 
+
+            if (normalizeAnswer(userAns) === normalizeAnswer(rightAns)) { // 공백/대소문자 무시하고 비교
+                await customAlert("🎉 정답입니다! 팀원들이 풀 때까지 기다려 주세요.");
+                inputEl.disabled = true; btnEl.disabled = true; btnEl.innerText = "제출 완료";
+                const solveTimeSec = Math.floor((Date.now() - currentRoomData.stageStartTime) / 1000);
+                // submittedAnswerNormalized: DB 규칙이 실제 정답과 대조 검증할 수 있도록 함께 기록
+                // (콘솔에서 isSolved:true만 억지로 써도, 이 값이 정답과 안 맞으면 DB 규칙이 거부함)
+                await update(myPlayerRef, { isSolved: true, attempts: currentAttempts, solveTime: solveTimeSec, submittedAnswerNormalized: normalizeAnswer(userAns) });
+            } else {
+                // 패널티는 오답 모달이 뜨는 즉시 백그라운드에서 카운트 시작 (모달을 닫는 시점과 무관)
+                inputEl.value = ""; inputEl.disabled = true; btnEl.disabled = true; penaltyEl.style.display = "block";
+                let timeLeft = 10; penaltyEl.innerText = `⏱️ 패널티 격리 중: ${timeLeft}초 남음`;
+                const timer = setInterval(() => {
+                    timeLeft--;
+                    if(timeLeft <= 0) {
+                        clearInterval(timer);
+                        inputEl.disabled = false; btnEl.disabled = false;
+                        penaltyEl.style.display = "none"; btnEl.innerText = "정답 제출";
+                    } else { penaltyEl.innerText = `⏱️ 패널티 격리 중: ${timeLeft}초 남음`; }
+                }, 1000);
+
+                update(myPlayerRef, { attempts: currentAttempts });
+                await customAlert("❌ 오답입니다! 신중하게 다시 계산해 보세요.\n(10초 동안 입력창이 잠깁니다.)");
+            }
+        }
+
+        window.goToNextStage = async function() {
+            const nextStage = currentStageNum + 1;
+            const updates = {
+                currentStage: nextStage, stageStartTime: Date.now(), 
+                "players/high/isSolved": false, "players/high/attempts": 0, "players/high/solveTime": 0,
+                "players/mid/isSolved": false, "players/mid/attempts": 0, "players/mid/solveTime": 0,
+                "players/low/isSolved": false, "players/low/attempts": 0, "players/low/solveTime": 0
+            };
+            await update(ref(db, `rooms/room_${myRoom}`), updates);
+        }
+
+        function showEndingScreen(type) {
+            clearInterval(timerInterval); showScreen("ending-screen");
+            const contentEl = document.getElementById("ending-content");
+            if(type === "clear") {
+                contentEl.innerHTML = `
+                    <h1 class="ending-title clear-text">🎉 ESCAPE CLEAR!</h1>
+                    <p style="font-size: 16px; line-height: 1.6;">수고하셨습니다!<br>조원들과 힘을 합쳐 제한 시간 내에 <br>학교 방탈출 미션을 완벽히 해결했습니다!</p>`;
+            } else {
+                contentEl.innerHTML = `
+                    <h1 class="ending-title fail-text">👻 GAME OVER</h1>
+                    <p style="font-size: 16px; line-height: 1.6;">시간이 초과되었습니다...<br>학교에서 미처 빠져나가지 못하고 갇혔습니다.<br>다시 도전해 보세요!</p>`;
+            }
+        }
+
+        window.resetToMain = function() { localStorage.clear(); location.reload(); }
+
+        // 팀장이 입장 코드를 입력하는 동안 나머지 조원에게 보여주는 대기 모달 (버튼 없이 자동으로 뜨고 닫힘)
+        let waitingForLeaderShown = false;
+        function showWaitingForLeaderModal(show) {
+            const overlay = document.getElementById('custom-modal-overlay');
+            if (show) {
+                const btns = document.getElementById('custom-modal-btns');
+                const msgEl = document.getElementById('custom-modal-msg');
+                btns.style.flexDirection = 'row';
+                msgEl.style.marginBottom = '0'; // 버튼이 없으므로 아래 여백 없애서 세로 중앙에 보이도록
+                msgEl.innerHTML = "팀장이 입장 코드를 입력할 때까지<br>잠시 기다려주세요.";
+                btns.innerHTML = '';
+                overlay.style.display = 'flex';
+                waitingForLeaderShown = true;
+            } else if (waitingForLeaderShown) {
+                overlay.style.display = 'none';
+                waitingForLeaderShown = false;
+            }
+        }
+
+        // 커스텀 alert / confirm 함수 정의
+        window.customAlert = function(msg) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('custom-modal-overlay');
+                const btns = document.getElementById('custom-modal-btns');
+                const msgEl = document.getElementById('custom-modal-msg');
+                btns.style.flexDirection = 'row';
+                msgEl.style.marginBottom = '20px';
+                msgEl.innerHTML = msg.replace(/\n/g, '<br>');
+                btns.innerHTML = `<button class="modal-btn modal-btn-ok">확인</button>`;
+                overlay.style.display = 'flex';
+                overlay.querySelector('.modal-btn-ok').onclick = () => { overlay.style.display = 'none'; resolve(); };
+            });
+        }
+
+        window.customConfirm = function(msg) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('custom-modal-overlay');
+                const btns = document.getElementById('custom-modal-btns');
+                const msgEl = document.getElementById('custom-modal-msg');
+                btns.style.flexDirection = 'row';
+                msgEl.style.marginBottom = '20px';
+                msgEl.innerHTML = msg.replace(/\n/g, '<br>');
+                btns.innerHTML = `
+                    <button class="modal-btn modal-btn-cancel">취소</button>
+                    <button class="modal-btn modal-btn-ok">확인</button>
+                `;
+                overlay.style.display = 'flex';
+                overlay.querySelector('.modal-btn-cancel').onclick = () => { overlay.style.display = 'none'; resolve(false); };
+                overlay.querySelector('.modal-btn-ok').onclick = () => { overlay.style.display = 'none'; resolve(true); };
+            });
+        }
+
+        // 입장 코드처럼 짧은 텍스트를 입력받는 프롬프트 (영문 대문자+숫자로 자동 변환)
+        window.customPrompt = function(msg) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('custom-modal-overlay');
+                const btns = document.getElementById('custom-modal-btns');
+                const msgEl = document.getElementById('custom-modal-msg');
+                msgEl.style.marginBottom = '20px';
+                msgEl.innerHTML = msg.replace(/\n/g, '<br>');
+                btns.style.flexDirection = 'column';
+                btns.innerHTML = `
+                    <input type="text" id="custom-modal-input" maxlength="5" autocomplete="off"
+                        style="text-transform:uppercase; text-align:center; letter-spacing:6px; font-weight:bold; font-size:20px; margin:0 0 15px 0;"
+                        placeholder="입장 코드">
+                    <div style="display:flex; gap:10px;">
+                        <button class="modal-btn modal-btn-cancel">취소</button>
+                        <button class="modal-btn modal-btn-ok">확인</button>
+                    </div>
+                `;
+                overlay.style.display = 'flex';
+
+                const inputEl = document.getElementById('custom-modal-input');
+                inputEl.focus();
+                inputEl.addEventListener('input', () => {
+                    inputEl.value = inputEl.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                });
+                inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { overlay.style.display = 'none'; resolve(inputEl.value); }
+                });
+                overlay.querySelector('.modal-btn-cancel').onclick = () => { overlay.style.display = 'none'; resolve(null); };
+                overlay.querySelector('.modal-btn-ok').onclick = () => { overlay.style.display = 'none'; resolve(inputEl.value); };
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- 로그인 화면 -->
+        <div id="login-screen" class="screen">
+            <h2 style="font-size: 32px; margin-bottom: 10px;">수학 복습 방탈출</h2>
+            <p style="color: #888; margin-bottom: 25px;">조 번호와 이름을 입력하세요.</p>
+            <input type="number" id="room-input" placeholder="조 번호 (예: 3)">
+            <input type="text" id="name-input" placeholder="이름 (예: 홍길동)">
+            <button onclick="handleLogin()">대기실 입장하기</button>
+        </div>
+
+        <!-- 대기실 화면 -->
+        <div id="lobby-screen" class="screen">
+            <h2 id="lobby-title">0조 대기실</h2>
+            <p style="color: #666; margin-bottom: 20px;">자신이 담당할 난이도를 선택하세요.</p>
+            <button id="btn-high" class="role-btn" onclick="selectRole('high')"><span>🔥 상 (팀장)</span><span id="status-high" class="status-text">대기 중...</span></button>
+            <button id="btn-mid" class="role-btn" onclick="selectRole('mid')"><span>⚡ 중 (부팀장)</span><span id="status-mid" class="status-text">대기 중...</span></button>
+            <button id="btn-low" class="role-btn" onclick="selectRole('low')"><span>🌱 하 (대원)</span><span id="status-low" class="status-text">대기 중...</span></button>
+            
+            <button id="start-game-btn" onclick="startGame()" disabled style="margin-top:25px;">팀원을 기다리는 중... (0/3)</button>
+            <button class="btn-outline" onclick="handleLogout()" style="margin-top: 10px;">조 변경하기 (로그아웃)</button>
+        </div>
+
+        <!-- 초기 설명(인트로) 화면 -->
+        <div id="intro-screen" class="screen">
+            <h2 id="intro-title">미션 시작!</h2>
+            <div class="intro-box">
+                <p id="intro-text"></p>
+            </div>
+            <button onclick="startFromIntro()">🚪 탐험 시작하기!</button>
+        </div>
+
+        <!-- 게임 화면 -->
+        <div id="game-screen" class="screen">
+            <div class="timer-banner">⏱️ 남은 시간 : <span id="time-display">40:00</span></div>
+            <h2 id="game-stage-title" style="margin-bottom: 5px;">Stage 1</h2>
+            
+            <!-- 새로 추가된 스테이지 스토리 설명 영역 -->
+            <p id="game-stage-desc" style="font-size: 14px; color: #7f8c8d; font-family: 'Nanum Gothic', sans-serif; margin-top: 0; margin-bottom: 15px; display: none; line-height: 1.4;"></p>
+            
+            <div class="quiz-box">
+                <p id="quiz-text" style="margin-top:0;">선생님이 문제를 불러오는 중입니다...</p>
+                <img id="quiz-img" src="" alt="참고 이미지" style="display:none; max-width: 100%; border-radius: 12px; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            </div>
+            
+            <input type="text" id="answer-input" placeholder="정답 입력 (숫자나 텍스트)">
+            <div id="penalty-countdown" class="penalty-text">⏱️ 패널티 격리 중: 10초 남음</div>
+            <button id="submit-btn" onclick="submitAnswer()">정답 제출</button>
+
+            <div class="team-status-board">
+                <h4>👥 우리 조 탈출 현황</h4>
+                <div class="team-member-row"><span id="status-name-high">🔥 상: 대기 중</span><span id="status-badge-high" class="badge unsolved">푸는 중</span></div>
+                <div class="team-member-row"><span id="status-name-mid">⚡ 중: 대기 중</span><span id="status-badge-mid" class="badge unsolved">푸는 중</span></div>
+                <div class="team-member-row"><span id="status-name-low">🌱 하: 대기 중</span><span id="status-badge-low" class="badge unsolved">푸는 중</span></div>
+            </div>
+
+            <button id="next-stage-btn" class="btn-warning" onclick="goToNextStage()" disabled>
+                모든 조원이 정답을 맞춰야 탈출 가능합니다
+            </button>
+        </div>
+
+        <!-- 엔딩 화면 -->
+        <div id="ending-screen" class="screen">
+            <div id="ending-content" style="margin: 40px 0;"></div>
+            <button class="btn-outline" onclick="resetToMain()">처음 화면으로 돌아가기</button>
+        </div>
+    </div>
+
+    <!-- 🎨 공통 커스텀 모달 -->
+    <div id="custom-modal-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <p id="custom-modal-msg"></p>
+            <div id="custom-modal-btns" class="modal-btn-group"></div>
+        </div>
+    </div>
+
+    <!-- ⏳ 대기실 입장 중 로딩 오버레이 -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-box">
+            <p>입장 중... ⏳</p>
+        </div>
+    </div>
+</body>
+</html>
