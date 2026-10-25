@@ -319,7 +319,17 @@
                 return;
             }
 
-            if (myRole && myRole !== role) await set(ref(db, `rooms/room_${myRoom}/players/${myRole}`), null);
+            // 새 역할 외에 내 이름으로 잡혀 있는 다른 역할은 모두 해제.
+            // (myRole 전역 변수는 실시간 리스너가 이름 일치 순서대로 덮어쓰므로, 이전 역할을 myRole로 판단하면
+            //  상 → 중/하 전환 시 이전 역할이 해제되지 않아 두 역할이 동시에 점유되는 문제가 생김)
+            const playersSnap = await get(ref(db, `rooms/room_${myRoom}/players`));
+            const currentPlayers = playersSnap.val() || {};
+            const releases = {};
+            ['high', 'mid', 'low'].forEach(r => {
+                if (r !== role && currentPlayers[r] && currentPlayers[r].name === myName) releases[r] = null;
+            });
+            if (Object.keys(releases).length > 0) await update(ref(db, `rooms/room_${myRoom}/players`), releases);
+
             myRole = role; localStorage.setItem("userRole", role);
         }
 
