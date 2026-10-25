@@ -197,6 +197,42 @@
         let quillEditor;
         let descEditor;
 
+        // 한글 입력(IME) 중 마지막 글자가 조합 상태에서 버튼을 바로 누르면 값에 아직 반영되지 않을 수 있어,
+        // 입력창 값을 읽기 전에 잠깐 기다려서 조합이 확정되도록 함
+        function waitForImeCommit() {
+            const active = document.activeElement;
+            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) active.blur();
+            return new Promise(resolve => setTimeout(resolve, 60));
+        }
+
+        // 한/영 키가 한글 상태여도 같은 자판 위치의 영문 대문자/숫자로 자동 변환 (예: ㅁㅠㅊ → ABC)
+        const JAMO_KEYS = {
+            'ㄱ':'r','ㄲ':'r','ㄴ':'s','ㄷ':'e','ㄸ':'e','ㄹ':'f','ㅁ':'a','ㅂ':'q','ㅃ':'q','ㅅ':'t','ㅆ':'t','ㅇ':'d','ㅈ':'w','ㅉ':'w','ㅊ':'c','ㅋ':'z','ㅌ':'x','ㅍ':'v','ㅎ':'g',
+            'ㅏ':'k','ㅐ':'o','ㅑ':'i','ㅒ':'o','ㅓ':'j','ㅔ':'p','ㅕ':'u','ㅖ':'p','ㅗ':'h','ㅘ':'hk','ㅙ':'ho','ㅚ':'hl','ㅛ':'y','ㅜ':'n','ㅝ':'nj','ㅞ':'np','ㅟ':'nl','ㅠ':'b','ㅡ':'m','ㅢ':'ml','ㅣ':'l',
+            'ㄳ':'rt','ㄵ':'sw','ㄶ':'sg','ㄺ':'fr','ㄻ':'fa','ㄼ':'fq','ㄽ':'ft','ㄾ':'fx','ㄿ':'fv','ㅀ':'fg','ㅄ':'qt'
+        };
+        const HANGUL_INITIALS = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+        const HANGUL_MEDIALS = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
+        const HANGUL_FINALS = '_ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
+        function toEntryCode(str) {
+            let out = '';
+            for (const ch of String(str)) {
+                const c = ch.codePointAt(0);
+                if (c >= 0xAC00 && c <= 0xD7A3) {
+                    const i = c - 0xAC00;
+                    out += JAMO_KEYS[HANGUL_INITIALS[Math.floor(i / 588)]] + JAMO_KEYS[HANGUL_MEDIALS[Math.floor((i % 588) / 28)]];
+                    if (i % 28) out += JAMO_KEYS[HANGUL_FINALS[i % 28]];
+                } else if (JAMO_KEYS[ch]) {
+                    out += JAMO_KEYS[ch];
+                } else {
+                    out += ch;
+                }
+            }
+            return out.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+        }
+
+        window.toEntryCode = toEntryCode;
+
         // index.html의 정답 비교 로직과 반드시 동일해야 함 (DB 규칙이 이 값으로 대조 검증함)
         function normalizeAnswer(s) {
             return String(s).trim().toLowerCase().replace(/\s+/g, '');
@@ -499,7 +535,7 @@
         };
 
         window.saveEntryCode = async function() {
-            const val = document.getElementById("setting-entry-code").value.toUpperCase();
+            const val = toEntryCode(document.getElementById("setting-entry-code").value);
             if (!/^[A-Z0-9]{5}$/.test(val)) {
                 return await customAlert("입장 코드는 영문 대문자와 숫자로 정확히 5자리여야 합니다.");
             }
@@ -561,6 +597,7 @@
         }
 
         window.saveStageDesc = async function() {
+            await waitForImeCommit();
             const stage = document.getElementById("desc-stage-select").value;
             const stageName = document.getElementById("stage-name").value;
             const hasContent = descEditor.getText().trim() || descEditor.root.innerHTML.includes('<span class="ql-formula"');
@@ -674,6 +711,7 @@
         };
 
         window.saveIntro = async function() {
+            await waitForImeCommit();
             const title = document.getElementById("intro-title-input").value;
             const text = document.getElementById("intro-text-input").value;
             if(!title || !text) return await customAlert("인트로 제목과 내용을 모두 입력하세요.");
@@ -719,6 +757,7 @@
         }
 
         window.saveQuestion = async function() {
+            await waitForImeCommit();
             const stage = document.getElementById("stage-select").value;
             const role = document.getElementById("role-select").value;
 
@@ -955,7 +994,7 @@
                 <div class="settings-unit">
                     <label>입장 코드 (영문 대문자+숫자 5자리)</label>
                     <div class="settings-input-group">
-                        <input type="text" id="setting-entry-code" maxlength="5" placeholder="예: A1B2C" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+                        <input type="text" id="setting-entry-code" maxlength="5" placeholder="예: A1B2C" oninput="this.value = toEntryCode(this.value)" oncompositionend="this.value = toEntryCode(this.value)">
                         <button class="settings-save-btn" onclick="saveEntryCode()">저장</button>
                     </div>
                 </div>
