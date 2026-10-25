@@ -53,7 +53,7 @@
         
         .ql-toolbar { background: #f8fafc; border-radius: 10px 10px 0 0; border: 2px solid #e2e8f0 !important; border-bottom: none !important; }
         .ql-container { border: 2px solid #e2e8f0 !important; border-radius: 0 0 10px 10px; font-family: 'Nanum Gothic', sans-serif !important; font-size: 15px !important; background: #fdfdfe; }
-        #editor-container { height: 160px; }
+        #editor-container, #desc-editor-container { height: 160px; }
         .ql-editor { padding: 15px; line-height: 1.6; }
         .ql-editor:focus { background: #fff; }
 
@@ -113,6 +113,8 @@
         .excel-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 14px; font-family: 'Gowun Dodum', sans-serif; transition: 0.2s; }
         .btn-download { background: #ffffff; color: #435b71; border: 1px solid #c9d6e4; }
         .btn-download:hover { background: #eef2f6; }
+        .btn-save-data { background: #eaf3fc; color: #435b71; border: 1px solid #a3c4f3; }
+        .btn-save-data:hover { background: #d8e8f8; }
         .btn-upload { background: #435b71; color: #ffffff; }
         .btn-upload:hover { background: #2c3e50; }
 
@@ -182,6 +184,7 @@
         const SHEET_LOGGER_URL = "https://script.google.com/macros/s/AKfycbw9ZUIarvyum2mPRG7F2Y-Z0vZms4g_NgUEihmqEYjLkWkNIBaQK5zn4OnivP_K9Qxv/exec";
 
         let quillEditor;
+        let descEditor;
 
         // index.html의 정답 비교 로직과 반드시 동일해야 함 (DB 규칙이 이 값으로 대조 검증함)
         function normalizeAnswer(s) {
@@ -256,7 +259,7 @@
 
                 if (!quillInitialized) {
                     window.katex = katex;
-                    quillEditor = new Quill('#editor-container', {
+                    const makeEditor = (selector, placeholder) => new Quill(selector, {
                         modules: {
                             formula: true,
                             toolbar: [
@@ -268,9 +271,11 @@
                                 ['clean']
                             ]
                         },
-                        placeholder: '이곳에 문제를 입력하세요...',
+                        placeholder,
                         theme: 'snow'
                     });
+                    quillEditor = makeEditor('#editor-container', '이곳에 문제를 입력하세요...');
+                    descEditor = makeEditor('#desc-editor-container', '예: 어두운 복도에 낡은 칠판이 놓여 있다...');
                     quillInitialized = true;
                 }
 
@@ -304,6 +309,59 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "방탈출_문제양식");
             XLSX.writeFile(wb, "방탈출_문제업로드_양식.xlsx");
+        };
+
+        // 현재 DB에 저장된 데이터를 업로드 양식과 같은 형태의 엑셀로 내려받기 (백업 겸 재업로드용)
+        function todayStamp() {
+            const d = new Date();
+            return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function sortedStageKeys(quizzes) {
+            return Object.keys(quizzes || {})
+                .filter(k => /^stage_\d+$/.test(k))
+                .sort((a, b) => Number(a.slice(6)) - Number(b.slice(6)));
+        }
+
+        window.exportQuestionsExcel = async function() {
+            const snap = await get(dbRef(db, 'quizzes'));
+            const quizzes = snap.exists() ? snap.val() : {};
+            const keys = sortedStageKeys(quizzes);
+            if (keys.length === 0) return await customAlert("저장할 문제 데이터가 없습니다.");
+
+            const roleLabels = { high: "상", mid: "중", low: "하" };
+            const data = [["스테이지(1~10)", "난이도(상/중/하)", "문제 텍스트(엔터키 허용)", "정답"]];
+            keys.forEach(key => {
+                const stage = Number(key.slice(6));
+                ['high', 'mid', 'low'].forEach(role => {
+                    const q = quizzes[key][role] || {};
+                    data.push([stage, roleLabels[role], q.question || "", q.answer || ""]);
+                });
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:15}, {wch:15}, {wch:50}, {wch:15}];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "방탈출_문제양식");
+            XLSX.writeFile(wb, `방탈출_문제_현재데이터_${todayStamp()}.xlsx`);
+        };
+
+        window.exportDescExcel = async function() {
+            const snap = await get(dbRef(db, 'quizzes'));
+            const quizzes = snap.exists() ? snap.val() : {};
+            const keys = sortedStageKeys(quizzes);
+            if (keys.length === 0) return await customAlert("저장할 스테이지 데이터가 없습니다.");
+
+            const data = [["스테이지(1~10)", "테마 이름", "설명"]];
+            keys.forEach(key => {
+                data.push([Number(key.slice(6)), quizzes[key].stageName || "", quizzes[key].stageDesc || ""]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:15}, {wch:20}, {wch:60}];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "스테이지_설명_양식");
+            XLSX.writeFile(wb, `방탈출_스테이지설명_현재데이터_${todayStamp()}.xlsx`);
         };
 
         window.handleExcelUpload = async function(event) {
@@ -448,20 +506,81 @@
             document.getElementById("stage-name").value = nameSnap.exists() ? nameSnap.val() : "";
 
             const descSnap = await get(dbRef(db, `quizzes/stage_${stage}/stageDesc`));
-            document.getElementById("stage-desc").value = descSnap.exists() ? descSnap.val() : "";
+            const saved = descSnap.exists() ? String(descSnap.val()) : "";
+            // 서식 에디터 도입 전에 저장된 일반 텍스트 설명은 줄바꿈이 유지되도록 변환해서 표시
+            const looksLikeHtml = /<[a-z][\s\S]*>/i.test(saved);
+            descEditor.root.innerHTML = looksLikeHtml
+                ? saved
+                : saved.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+
+            const imgSnap = await get(dbRef(db, `quizzes/stage_${stage}/stageImageUrl`));
+            const imgBox = document.getElementById("stage-image-preview-box");
+            const imgEl = document.getElementById("stage-preview-img");
+            document.getElementById("stage-img-file").value = "";
+            if (imgSnap.exists() && imgSnap.val()) {
+                imgEl.src = imgSnap.val();
+                imgBox.style.display = "block";
+            } else {
+                imgEl.removeAttribute("src");
+                imgBox.style.display = "none";
+            }
         };
+
+        window.removeStageImage = function() {
+            document.getElementById("stage-img-file").value = "";
+            document.getElementById("stage-preview-img").removeAttribute("src");
+            document.getElementById("stage-image-preview-box").style.display = "none";
+        };
+
+        // 이미지 파일을 Apps Script(Drive)로 업로드하고 URL을 반환 (실패 시 null)
+        async function uploadImageFile(file, filename) {
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            const formData = new URLSearchParams();
+            formData.append('fileData', base64Data);
+            formData.append('mimeType', file.type);
+            formData.append('filename', filename);
+            const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData });
+            const result = await response.json();
+            return result.url || null;
+        }
 
         window.saveStageDesc = async function() {
             const stage = document.getElementById("desc-stage-select").value;
             const stageName = document.getElementById("stage-name").value;
-            const stageDesc = document.getElementById("stage-desc").value;
+            const hasContent = descEditor.getText().trim() || descEditor.root.innerHTML.includes('<span class="ql-formula"');
+            const stageDesc = hasContent ? descEditor.root.innerHTML : "";
+            const fileInput = document.getElementById("stage-img-file");
+            const imgBox = document.getElementById("stage-image-preview-box");
             const btn = document.getElementById("save-desc-btn");
 
             btn.disabled = true; btn.innerText = "저장 중... ⏳";
+
+            let finalImageUrl = "";
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                try {
+                    finalImageUrl = await uploadImageFile(file, `stage${stage}_common_${Date.now()}.${file.name.split('.').pop()}`);
+                } catch (err) { finalImageUrl = null; }
+                if (!finalImageUrl) {
+                    await customAlert("이미지 업로드에 실패했습니다. 스크립트 URL을 확인해 주세요.\n(이미지를 제외한 내용도 저장되지 않았습니다)");
+                    btn.disabled = false; btn.innerText = "이 스테이지 정보 저장하기";
+                    return;
+                }
+            } else if (imgBox.style.display !== "none") {
+                finalImageUrl = document.getElementById("stage-preview-img").getAttribute("src") || "";
+            }
+
             await set(dbRef(db, `quizzes/stage_${stage}/stageName`), stageName);
             await set(dbRef(db, `quizzes/stage_${stage}/stageDesc`), stageDesc);
-            await customAlert(`Stage ${stage}의 테마 이름/설명이 저장되었습니다. 📖`);
+            await set(dbRef(db, `quizzes/stage_${stage}/stageImageUrl`), finalImageUrl || null);
+            await customAlert(`Stage ${stage}의 테마 이름/설명/이미지가 저장되었습니다. 📖`);
             btn.disabled = false; btn.innerText = "이 스테이지 정보 저장하기";
+            loadStageDesc();
         };
 
         window.downloadDescExcelTemplate = function() {
@@ -508,7 +627,7 @@
 
                         const stage = row[0];
                         const stageName = row[1] || "";
-                        const desc = row[2] || "";
+                        const desc = String(row[2] || "").replace(/\n/g, '<br>');
                         if(!stage) continue;
 
                         dbUpdates[`stage_${stage}/stageName`] = stageName;
@@ -860,6 +979,7 @@
                 <p>양식을 다운로드하여 스테이지별 테마 이름/설명을 작성한 뒤 업로드하세요.</p>
                 <div class="excel-btn-group">
                     <button class="excel-btn btn-download" onclick="downloadDescExcelTemplate()">📥 양식 다운로드</button>
+                    <button class="excel-btn btn-save-data" onclick="exportDescExcel()">💾 현재 데이터 저장</button>
                     <input type="file" id="desc-excel-file" accept=".xlsx, .xls" style="display:none;" onchange="handleDescExcelUpload(event)">
                     <button class="excel-btn btn-upload" onclick="document.getElementById('desc-excel-file').click()">📤 엑셀 업로드</button>
                 </div>
@@ -871,8 +991,16 @@
             <label>스테이지 테마 이름 (예: 1층 복도)</label>
             <input type="text" id="stage-name" placeholder="학생들에게 보여질 스테이지 이름">
 
+            <label>스테이지 공통 이미지 (선택사항, 제목과 설명 사이에 표시 / 상·중·하 모두 동일)</label>
+            <input type="file" id="stage-img-file" accept="image/png, image/jpeg, image/jpg, image/gif">
+            <div id="stage-image-preview-box" class="image-preview-box">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: #728496;">현재 적용된 이미지</p>
+                <img id="stage-preview-img" src=""><br>
+                <button type="button" class="del-img-btn" onclick="removeStageImage()">이미지 지우기</button>
+            </div>
+
             <label>스테이지 스토리 설명 (선택사항, 학생 화면 상단에 표시)</label>
-            <textarea id="stage-desc" class="themed-textarea" placeholder="예: 어두운 복도에 낡은 칠판이 놓여 있다..."></textarea>
+            <div id="desc-editor-container"></div>
 
             <button id="save-desc-btn" class="action-btn" onclick="saveStageDesc()">이 스테이지 정보 저장하기</button>
         </div>
@@ -885,6 +1013,7 @@
                 <p>양식을 다운로드하여 30문제를 모두 작성한 뒤 업로드하세요.<br>(* 업로드 시 기존 데이터 및 이미지는 초기화됩니다)</p>
                 <div class="excel-btn-group">
                     <button class="excel-btn btn-download" onclick="downloadExcelTemplate()">📥 양식 다운로드</button>
+                    <button class="excel-btn btn-save-data" onclick="exportQuestionsExcel()">💾 현재 데이터 저장</button>
                     <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelUpload(event)">
                     <button class="excel-btn btn-upload" onclick="document.getElementById('excel-file').click()">📤 엑셀 업로드</button>
                 </div>
