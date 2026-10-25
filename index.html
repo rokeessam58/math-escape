@@ -6,10 +6,21 @@
     <title>수학 복습 방탈출</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Gothic:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+
+        @font-face {
+            font-family: 'BusanDandiGothic';
+            src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2610132210@l/l/부산단디고딕M.woff2') format('woff2');
+            font-weight: 500; font-display: swap;
+        }
+        @font-face {
+            font-family: 'BusanDandiGothic';
+            src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2610132210@l/l/부산단디고딕B.woff2') format('woff2');
+            font-weight: 700; font-display: swap;
+        }
 
         body {
-            font-family: 'Nanum Gothic', sans-serif;
+            font-family: 'BusanDandiGothic', sans-serif;
             margin: 0; padding: 0;
             background-color: #fdfaf6; /* 따뜻한 파스텔 아이보리 */
             color: #4a4a4a;
@@ -35,7 +46,7 @@
             width: 100%; padding: 14px; margin: 8px 0;
             border: 2px solid #e2e8f0; border-radius: 12px;
             background: #f8fafc; color: #333; font-size: 16px; box-sizing: border-box;
-            font-family: 'Nanum Gothic', sans-serif; transition: 0.3s;
+            font-family: 'BusanDandiGothic', sans-serif; transition: 0.3s;
         }
         input:focus { border-color: #a3c4f3; outline: none; background: #fff; }
         input:disabled { background: #eef2f6; color: #888; border-color: #dbe4ed; }
@@ -115,7 +126,7 @@
         .modal-box, .loading-box {
             background: #ffffff; padding: 30px 35px; border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center;
-            max-width: 380px; width: 85%; font-family: 'Nanum Gothic', sans-serif;
+            max-width: 380px; width: 85%; font-family: 'BusanDandiGothic', sans-serif;
         }
         .modal-box p, .loading-box p {
             font-size: 16px; color: #435b71; margin: 0 0 20px 0; line-height: 1.5; font-weight: bold;
@@ -197,6 +208,17 @@
         }
 
         window.handleLogin = async function() {
+            const btn = document.getElementById("login-btn");
+            if (btn.disabled) return;
+            btn.disabled = true; btn.innerText = "입장 중...";
+            try {
+                await attemptLogin();
+            } finally {
+                btn.disabled = false; btn.innerText = "대기실 입장하기";
+            }
+        }
+
+        async function attemptLogin() {
             const roomInput = document.getElementById("room-input").value.trim();
             const nameInput = document.getElementById("name-input").value.trim();
             if(!roomInput || !nameInput) return await customAlert("조 번호와 이름을 모두 입력해 주세요.");
@@ -700,7 +722,7 @@
             <p style="color: #888; margin-bottom: 25px;">조 번호와 이름을 입력하세요.</p>
             <input type="number" id="room-input" placeholder="조 번호 (예: 3)">
             <input type="text" id="name-input" placeholder="이름 (예: 홍길동)">
-            <button onclick="handleLogin()">대기실 입장하기</button>
+            <button id="login-btn" onclick="handleLogin()">대기실 입장하기</button>
         </div>
 
         <!-- 대기실 화면 -->
@@ -732,7 +754,7 @@
             <!-- 새로 추가된 스테이지 스토리 설명 영역 -->
             <img id="stage-img" src="" alt="스테이지 이미지" style="display:none; max-width: 100%; border-radius: 12px; margin: 5px auto 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
 
-            <div id="game-stage-desc" style="font-size: 14px; color: #7f8c8d; font-family: 'Nanum Gothic', sans-serif; margin-top: 0; margin-bottom: 15px; display: none; line-height: 1.4; white-space: pre-line;"></div>
+            <div id="game-stage-desc" style="font-size: 14px; color: #7f8c8d; font-family: 'BusanDandiGothic', sans-serif; margin-top: 0; margin-bottom: 15px; display: none; line-height: 1.4; white-space: pre-line;"></div>
             
             <div class="quiz-box">
                 <p id="quiz-text" style="margin-top:0;">선생님이 문제를 불러오는 중입니다...</p>
