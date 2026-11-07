@@ -167,6 +167,11 @@
         .themed-textarea { width: 100%; box-sizing: border-box; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; font-family: 'BusanDandiGothic', sans-serif; font-size: 14px; resize: vertical; min-height: 60px; }
         .themed-textarea:focus { border-color: #a3c4f3; outline: none; background: #fff; }
 
+        .file-picker { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; background: #fdfdfe; }
+        .file-picker-btn { flex: none; padding: 6px 14px; background: #efefef; color: #222; border: 1px solid #767676; border-radius: 4px; font-family: 'BusanDandiGothic', sans-serif; font-size: 15px; cursor: pointer; }
+        .file-picker-btn:hover { background: #e2e2e2; }
+        .file-picker-name { flex: 1; min-width: 0; font-size: 15px; color: #333; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
         .intro-settings { margin-top: 25px; padding-top: 20px; border-top: 2px dashed #eaf0f6; }
 
         .topbar { display: flex; justify-content: flex-end; max-width: 1200px; margin: 0 auto 15px; }
@@ -563,7 +568,7 @@
             const imgSnap = await get(dbRef(db, `quizzes/stage_${stage}/stageImageUrl`));
             const imgBox = document.getElementById("stage-image-preview-box");
             const imgEl = document.getElementById("stage-preview-img");
-            document.getElementById("stage-img-file").value = "";
+            document.getElementById("stage-img-file").value = ""; updateStageFileName();
             if (imgSnap.exists() && imgSnap.val()) {
                 imgEl.src = imgSnap.val();
                 imgBox.style.display = "block";
@@ -573,8 +578,14 @@
             }
         };
 
+        window.updateFileName = function(inputId, nameId) {
+            const f = document.getElementById(inputId).files[0];
+            document.getElementById(nameId).innerText = f ? f.name : "선택된 파일 없음";
+        };
+        window.updateStageFileName = function() { updateFileName('stage-img-file', 'stage-img-file-name'); };
+
         window.removeStageImage = function() {
-            document.getElementById("stage-img-file").value = "";
+            document.getElementById("stage-img-file").value = ""; updateStageFileName();
             document.getElementById("stage-preview-img").removeAttribute("src");
             document.getElementById("stage-image-preview-box").style.display = "none";
         };
@@ -726,7 +737,7 @@
             const qRef = dbRef(db, `quizzes/stage_${stage}/${role}`);
             const snapshot = await get(qRef);
 
-            document.getElementById("q-img-file").value = "";
+            document.getElementById("q-img-file").value = ""; updateFileName('q-img-file', 'q-img-file-name');
             const previewBox = document.getElementById("image-preview-box");
             const previewImg = document.getElementById("preview-img");
 
@@ -751,7 +762,7 @@
         }
 
         window.removeImage = function() {
-            document.getElementById("q-img-file").value = "";
+            document.getElementById("q-img-file").value = ""; updateFileName('q-img-file', 'q-img-file-name');
             document.getElementById("preview-img").src = "";
             document.getElementById("image-preview-box").style.display = "none";
         }
@@ -1042,7 +1053,11 @@
             <input type="text" id="stage-name" placeholder="학생들에게 보여질 스테이지 이름">
 
             <label>스테이지 공통 이미지 (선택사항, 제목과 설명 사이에 표시 / 상·중·하 모두 동일)</label>
-            <input type="file" id="stage-img-file" accept="image/png, image/jpeg, image/jpg, image/gif">
+            <input type="file" id="stage-img-file" accept="image/png, image/jpeg, image/jpg, image/gif" style="display:none;" onchange="updateStageFileName()">
+            <div class="file-picker">
+                <button type="button" class="file-picker-btn" onclick="document.getElementById('stage-img-file').click()">파일 선택</button>
+                <span id="stage-img-file-name" class="file-picker-name">선택된 파일 없음</span>
+            </div>
             <div id="stage-image-preview-box" class="image-preview-box">
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #728496;">현재 적용된 이미지</p>
                 <img id="stage-preview-img" src=""><br>
@@ -1081,7 +1096,11 @@
             <div id="editor-container"></div>
 
             <label>참고 이미지 업로드 (선택사항)</label>
-            <input type="file" id="q-img-file" accept="image/png, image/jpeg, image/jpg, image/gif">
+            <input type="file" id="q-img-file" accept="image/png, image/jpeg, image/jpg, image/gif" style="display:none;" onchange="updateFileName('q-img-file', 'q-img-file-name')">
+            <div class="file-picker">
+                <button type="button" class="file-picker-btn" onclick="document.getElementById('q-img-file').click()">파일 선택</button>
+                <span id="q-img-file-name" class="file-picker-name">선택된 파일 없음</span>
+            </div>
             <div id="image-preview-box" class="image-preview-box">
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #728496;">현재 적용된 이미지</p>
                 <img id="preview-img" src=""><br>
