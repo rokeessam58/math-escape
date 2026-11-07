@@ -238,6 +238,26 @@
 
         window.toEntryCode = toEntryCode;
 
+        // 엑셀 텍스트 속 $...$ (LaTeX)를 Quill 수식(ql-formula)과 같은 구조로 변환.
+        // 학생 화면에는 Quill가 없으므로 KaTeX로 미리 그려진 HTML을 함께 저장하고,
+        // data-value 덕분에 교사 에디터에서 열면 수식 블록으로 다시 인식됨
+        function escapeAttr(str) {
+            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function convertLatexToQuillHtml(text) {
+            return String(text).replace(/\$([^$\n]+?)\$/g, (match, latex) => {
+                const tex = latex.trim();
+                if (!tex) return match;
+                try {
+                    const rendered = katex.renderToString(tex, { throwOnError: false, errorColor: '#f00' });
+                    return `<span class="ql-formula" data-value="${escapeAttr(tex)}"><span contenteditable="false">${rendered}</span></span>`;
+                } catch (e) {
+                    return match;
+                }
+            });
+        }
+        window.convertLatexToQuillHtml = convertLatexToQuillHtml;
+
         // index.html의 정답 비교 로직과 반드시 동일해야 함 (DB 규칙이 이 값으로 대조 검증함)
         function normalizeAnswer(s) {
             return String(s).trim().toLowerCase().replace(/\s+/g, '');
@@ -456,7 +476,7 @@
                         else if(diffStr === "하") role = "low";
                         else continue;
 
-                        question = question.replace(/\n/g, '<br>');
+                        question = convertLatexToQuillHtml(question).replace(/\n/g, '<br>');
 
                         dbUpdates[`stage_${stage}/${role}/question`] = question;
                         dbUpdates[`stage_${stage}/${role}/answer`] = answer;
@@ -686,7 +706,7 @@
 
                         const stage = row[0];
                         const stageName = row[1] || "";
-                        const desc = String(row[2] || "").replace(/\n/g, '<br>');
+                        const desc = convertLatexToQuillHtml(row[2] || "").replace(/\n/g, '<br>');
                         if(!stage) continue;
 
                         dbUpdates[`stage_${stage}/stageName`] = stageName;
