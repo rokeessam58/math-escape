@@ -258,6 +258,13 @@
         }
         window.convertLatexToQuillHtml = convertLatexToQuillHtml;
 
+        // 저장된 HTML을 에디터에 불러오기.
+        // root.innerHTML에 직접 넣으면 <p>로 감싸지 않은 인라인 요소(텍스트, 수식, <br>)마다
+        // Quill이 별도 문단을 만들어 수식 앞뒤에 줄바꿈이 생기므로, Quill 클립보드 변환을 거쳐 넣는다
+        function setEditorHtml(editor, html) {
+            editor.setContents(editor.clipboard.convert(html || ""), 'silent');
+        }
+
         // index.html의 정답 비교 로직과 반드시 동일해야 함 (DB 규칙이 이 값으로 대조 검증함)
         function normalizeAnswer(s) {
             return String(s).trim().toLowerCase().replace(/\s+/g, '');
@@ -581,9 +588,9 @@
             const saved = descSnap.exists() ? String(descSnap.val()) : "";
             // 서식 에디터 도입 전에 저장된 일반 텍스트 설명은 줄바꿈이 유지되도록 변환해서 표시
             const looksLikeHtml = /<[a-z][\s\S]*>/i.test(saved);
-            descEditor.root.innerHTML = looksLikeHtml
+            setEditorHtml(descEditor, looksLikeHtml
                 ? saved
-                : saved.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+                : saved.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'));
 
             const imgSnap = await get(dbRef(db, `quizzes/stage_${stage}/stageImageUrl`));
             const imgBox = document.getElementById("stage-image-preview-box");
@@ -763,8 +770,8 @@
 
             if (snapshot.exists()) {
                 const data = snapshot.val();
-                quillEditor.root.innerHTML = data.question || "";
-                
+                setEditorHtml(quillEditor, data.question || "");
+
                 document.getElementById("q-ans").value = data.answer || "";
                 if (data.imageUrl) {
                     previewImg.src = data.imageUrl;
@@ -774,7 +781,7 @@
                     previewBox.style.display = "none";
                 }
             } else {
-                quillEditor.root.innerHTML = ""; 
+                setEditorHtml(quillEditor, "");
                 document.getElementById("q-ans").value = "";
                 previewImg.src = "";
                 previewBox.style.display = "none";
