@@ -1,3 +1,6 @@
 .claude/
 claude-prompt.txt
 gemini-prompt.txt
+apps-script/
+monitor-preview.html
+sheet-preview.html

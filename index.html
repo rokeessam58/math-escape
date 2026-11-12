@@ -168,7 +168,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, get, runTransaction, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC8h3jceC6gmoU24plIimhvEOJPUWrYRNg",
@@ -185,6 +185,70 @@
         let TOTAL_STAGES = 10; // 기본 10스테이지 (교사가 settings/totalStages로 조절 가능)
         let quizzes = {};
         const MAX_MEMBERS = 3;
+
+        // ================= 서버 시간 보정 =================
+        // 학생 PC 시계가 서로 달라도 제한 시간/스테이지 시간이 어긋나지 않도록 Firebase 서버 시간 기준으로 계산
+        let serverOffset = 0;
+        const serverNow = () => Date.now() + serverOffset;
+
+        // ================= 학생 활동 기록 (구글 시트) =================
+        // Apps Script 웹앱 URL을 넣으면 오답/정답/스테이지 완료 등이 구글 시트에 한 줄씩 쌓임. 비워 두면 기록하지 않음.
+        const ACTIVITY_LOG_URL = "https://script.google.com/macros/s/AKfycbzRCuDgKMMyPLHLlpYwMFFdtrpDWZ30_ktpt-Ht_9NCzp6CrGM1tZVIc0PJW63i7dfK/exec";
+        const ACTIVITY_LOG_TOKEN = "GINPhiarnkzF04B8RdTEjFpB6dux";
+        const LOG_QUEUE_KEY = "activityLogQueue";
+
+        async function sendActivityPayload(payload) {
+            await fetch(ACTIVITY_LOG_URL, { method: 'POST', mode: 'no-cors', keepalive: true, body: JSON.stringify(payload) });
+        }
+        async function flushActivityQueue() {
+            let queue = [];
+            try { queue = JSON.parse(localStorage.getItem(LOG_QUEUE_KEY) || "[]"); } catch (e) { queue = []; }
+            if (!queue.length) return;
+            localStorage.removeItem(LOG_QUEUE_KEY);
+            for (const p of queue) {
+                try { await sendActivityPayload(p); } catch (e) { enqueueActivity(p); }
+            }
+        }
+        function enqueueActivity(payload) {
+            try {
+                const queue = JSON.parse(localStorage.getItem(LOG_QUEUE_KEY) || "[]");
+                queue.push(payload);
+                localStorage.setItem(LOG_QUEUE_KEY, JSON.stringify(queue.slice(-100)));
+            } catch (e) {}
+        }
+        // 기록 전송이 실패해도 게임 진행에는 영향이 없도록 모든 오류를 삼킴 (실패한 기록은 다음 기회에 재전송)
+        function logActivity(event, extra) {
+            if (!ACTIVITY_LOG_URL) return;
+            try {
+                const rd = currentRoomData || {};
+                const payload = Object.assign({
+                    token: ACTIVITY_LOG_TOKEN, ts: serverNow(), sid: rd.startTime || 0,
+                    room: myRoom, stage: currentStageNum, role: myRole, name: myName, event
+                }, extra || {});
+                sendActivityPayload(payload).then(flushActivityQueue).catch(() => enqueueActivity(payload));
+            } catch (e) {}
+        }
+        const stageElapsedSec = () => Math.max(0, Math.floor((serverNow() - ((currentRoomData && currentRoomData.stageStartTime) || serverNow())) / 1000));
+
+        // ================= 접속 상태 (교사 모니터링의 '접속 끊김' 표시용) =================
+        // 역할을 가진 학생의 players/{역할}/online, lastSeen 을 기록하고, 연결이 끊기면 서버가 자동으로 online:false 로 바꿈
+        let isConnected = false, ownedRole = "", presenceRole = "", presenceRef = null;
+        function syncPresence() {
+            if (!isConnected || ownedRole === presenceRole) return;
+            if (presenceRef) { onDisconnect(presenceRef).cancel().catch(() => {}); presenceRef = null; }
+            presenceRole = ownedRole;
+            if (!ownedRole || !myRoom) return;
+            const r = ref(db, `rooms/room_${myRoom}/players/${ownedRole}`);
+            presenceRef = r;
+            onDisconnect(r).update({ online: false, lastSeen: serverTimestamp() })
+                .then(() => update(r, { online: true, lastSeen: serverTimestamp() }))
+                .catch(() => {});
+        }
+        function dropPresence() {
+            ownedRole = "";
+            if (presenceRef) { onDisconnect(presenceRef).cancel().catch(() => {}); presenceRef = null; }
+            presenceRole = "";
+        }
 
         // Firebase 키로 쓸 수 없는 문자(. 등)를 피하기 위해 이름을 인코딩
         function memberKey(name) {
@@ -235,6 +299,12 @@
         }
 
         window.onload = function() {
+            onValue(ref(db, '.info/serverTimeOffset'), (snapshot) => { serverOffset = snapshot.val() || 0; });
+            onValue(ref(db, '.info/connected'), (snapshot) => {
+                isConnected = snapshot.val() === true;
+                if (isConnected) { presenceRole = ""; presenceRef = null; syncPresence(); } // 재연결 시 서버가 지운 onDisconnect 를 다시 등록
+            });
+
             // 제한 시간 연동
             onValue(ref(db, 'settings/timeLimit'), (snapshot) => {
                 const limit = snapshot.val();
@@ -285,7 +355,8 @@
             
             const roomRef = ref(db, `rooms/room_${roomInput}`);
             const snapshot = await get(roomRef);
-            if (!snapshot.exists()) {
+            // 방 데이터가 없거나, 접속 상태 기록만 남은 껍데기(status 없음)인 경우 새로 만든다
+            if (!snapshot.exists() || !snapshot.val().status) {
                 await set(roomRef, {
                     status: "waiting", currentStage: 1, startTime: 0, stageStartTime: 0,
                     players: { high: "", mid: "", low: "" }
@@ -330,12 +401,16 @@
                 
                 // 🔥 교사가 일괄 초기화(DB 삭제)를 한 경우 캐시 비우고 쫓아내기!
                 if (!roomData) {
+                    dropPresence(); // 삭제된 방에 접속 상태 기록이 되살아나지 않도록 해제
                     await customAlert("선생님에 의해 게임이 강제 종료/초기화 되었습니다. 처음 화면으로 돌아갑니다.");
-                    localStorage.clear(); clearInterval(timerInterval); location.reload(); 
+                    localStorage.clear(); clearInterval(timerInterval); location.reload();
                     return;
                 }
-                
+
                 currentRoomData = roomData;
+                // 내 이름으로 잡힌 역할이 있으면 접속 상태 기록 시작 (역할을 취소/해제하면 자동으로 중단)
+                ownedRole = ['high', 'mid', 'low'].find(r => roomData.players && roomData.players[r] && roomData.players[r].name === myName) || "";
+                syncPresence();
                 if (roomData.status === "playing") {
                     showWaitingForLeaderModal(false); // 혹시 떠 있던 "팀장 대기" 모달 닫기
                     // 이 학생이 이 방에서 아직 초기 설명(인트로)을 안 봤다면 게임 화면 대신 인트로부터 보여줌
@@ -475,12 +550,14 @@
                 return;
             }
 
-            const now = Date.now();
+            const now = serverNow();
             update(ref(db, `rooms/room_${myRoom}`), { status: "playing", currentStage: 1, startTime: now, stageStartTime: now, awaitingCode: false });
+            logActivity('게임시작', { sid: now, stage: '', role: '', name: '', ts: now });
         }
 
         window.handleLogout = async function() {
             if (await customConfirm("대기실에서 나가시겠습니까?")) {
+                dropPresence();
                 if (myRoom && myRole) await set(ref(db, `rooms/room_${myRoom}/players/${myRole}`), null);
                 if (myRoom && myName) await set(ref(db, `rooms/room_${myRoom}/members/${memberKey(myName)}`), null);
                 clearInterval(timerInterval); localStorage.clear();
@@ -490,6 +567,7 @@
         }
 
         // ================= 본 게임 로직 =================
+        let clearLogged = false;
         function enterGameScreen(roomData) {
             showScreen("game-screen");
             const stageNum = roomData.currentStage;
@@ -497,6 +575,10 @@
 
             // 설정된 총 스테이지 수를 넘어서면 진짜 클리어
             if (stageNum > TOTAL_STAGES) {
+                if (!clearLogged) {
+                    clearLogged = true;
+                    logActivity('클리어', { stage: TOTAL_STAGES, role: '', name: '', secs: Math.floor((serverNow() - roomData.startTime) / 1000) });
+                }
                 update(ref(db, `rooms/room_${myRoom}`), { status: "cleared" });
                 return;
             }
@@ -585,9 +667,10 @@
         function startGlobalTimer(startTime) {
             const timerEl = document.getElementById("time-display");
             timerInterval = setInterval(() => {
-                const remainingTime = GAME_LIMIT_TIME - (Date.now() - startTime);
+                const remainingTime = GAME_LIMIT_TIME - (serverNow() - startTime);
                 if (remainingTime <= 0) {
                     clearInterval(timerInterval); timerEl.innerText = "00:00";
+                    logActivity('시간초과', { secs: Math.floor(GAME_LIMIT_TIME / 1000), role: '', name: '' });
                     update(ref(db, `rooms/room_${myRoom}`), { status: "failed" });
                 } else {
                     const min = Math.floor(remainingTime / 60000);
@@ -649,9 +732,11 @@
             currentAttempts++; 
 
             if (normalizeAnswer(userAns) === normalizeAnswer(rightAns)) { // 공백/대소문자 무시하고 비교
+                // 풀이 시간은 모달을 닫는 시점이 아니라 제출한 시점 기준으로 계산
+                const solveTimeSec = stageElapsedSec();
+                logActivity('정답', { answer: userAns, attempts: currentAttempts, secs: solveTimeSec });
                 await customAlert("🎉 정답입니다! 팀원들이 풀 때까지 기다려 주세요.");
                 inputEl.disabled = true; btnEl.disabled = true; btnEl.innerText = "제출 완료";
-                const solveTimeSec = Math.floor((Date.now() - currentRoomData.stageStartTime) / 1000);
                 // submittedAnswerNormalized: DB 규칙이 실제 정답과 대조 검증할 수 있도록 함께 기록
                 // (콘솔에서 isSolved:true만 억지로 써도, 이 값이 정답과 안 맞으면 DB 규칙이 거부함)
                 await update(myPlayerRef, { isSolved: true, attempts: currentAttempts, solveTime: solveTimeSec, submittedAnswerNormalized: normalizeAnswer(userAns) });
@@ -669,14 +754,19 @@
                 }, 1000);
 
                 update(myPlayerRef, { attempts: currentAttempts });
+                logActivity('오답', { answer: userAns, attempts: currentAttempts, secs: stageElapsedSec() });
                 await customAlert("❌ 오답입니다! 신중하게 다시 계산해 보세요.\n(10초 동안 입력창이 잠깁니다.)");
             }
         }
 
         window.goToNextStage = async function() {
             const nextStage = currentStageNum + 1;
+            // 이 스테이지의 조 전체 시도 횟수와 소요 시간을 기록 (다음 스테이지로 넘어가면 DB 값은 0으로 초기화되므로)
+            const players = (currentRoomData && currentRoomData.players) || {};
+            const sumAttempts = ['high', 'mid', 'low'].reduce((a, r) => a + ((players[r] && players[r].attempts) || 0), 0);
+            logActivity('스테이지완료', { role: '', name: '', attempts: sumAttempts, secs: stageElapsedSec() });
             const updates = {
-                currentStage: nextStage, stageStartTime: Date.now(), 
+                currentStage: nextStage, stageStartTime: serverNow(),
                 "players/high/isSolved": false, "players/high/attempts": 0, "players/high/solveTime": 0,
                 "players/mid/isSolved": false, "players/mid/attempts": 0, "players/mid/solveTime": 0,
                 "players/low/isSolved": false, "players/low/attempts": 0, "players/low/solveTime": 0

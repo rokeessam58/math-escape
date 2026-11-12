@@ -129,6 +129,78 @@
         .btn-upload { background: #435b71; color: #ffffff; }
         .btn-upload:hover { background: #2c3e50; }
 
+        /* 📊 실시간 조별 모니터링 */
+        .m-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .m-chip { border: 2px solid #e2e8f0; background: #fdfdfe; border-radius: 999px; padding: 6px 12px; font-size: 13px; color: #5c7285; cursor: pointer; font-family: inherit; transition: .15s; }
+        .m-chip b { color: #2c3e50; margin-left: 4px; }
+        .m-chip:hover { border-color: #a3c4f3; }
+        .m-chip.on { background: #a3c4f3; border-color: #a3c4f3; color: #1f3347; }
+        .m-chip.warn b { color: #c0392b; }
+        .m-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 13px; color: #728496; }
+        .m-sort { width: auto; min-height: 0; font-size: 13px; padding: 6px 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #fdfdfe; color: #435b71; }
+        .m-card { background: #f8fbff; border-left: 5px solid #a3c4f3; border-radius: 10px; padding: 14px 15px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.03); cursor: pointer; transition: .15s; }
+        .m-card:hover { box-shadow: 0 4px 14px rgba(120,150,190,.25); transform: translateY(-1px); }
+        .m-card.s-cleared { border-left-color: #2ecc71; }
+        .m-card.s-failed { border-left-color: #e74c3c; background: #fff8f7; }
+        .m-card.s-waiting { border-left-color: #c3cfdb; }
+        .m-card.stuck { border-left-color: #f39c12; background: #fffaf0; }
+        .m-card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .m-card-head h4 { font-family: 'Gowun Dodum', sans-serif; margin: 0; color: #435b71; font-size: 18px; }
+        .m-spacer { flex: 1; }
+        .m-badge { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: #e8eff7; color: #5c7285; white-space: nowrap; }
+        .m-badge.playing { background: #dcebff; color: #2b5d9b; }
+        .m-badge.cleared { background: #d9f5e4; color: #1f7a45; }
+        .m-badge.failed { background: #fde0dd; color: #b03a2e; }
+        .m-badge.stuck { background: #ffe9c7; color: #9a5b00; }
+        .m-badge.off { background: #eceff3; color: #6b7785; }
+        .m-stage-line { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #435b71; margin-bottom: 6px; }
+        .m-pbar { flex: 1; height: 8px; background: #e6edf5; border-radius: 99px; overflow: hidden; min-width: 60px; }
+        .m-pbar > i { display: block; height: 100%; background: linear-gradient(90deg, #a3c4f3, #6fa8f0); border-radius: 99px; transition: width .5s; }
+        .m-card.s-cleared .m-pbar > i { background: #2ecc71; }
+        .m-card.s-failed .m-pbar > i { background: #e88a82; }
+        .m-time-line { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #6b7a89; margin-bottom: 8px; }
+        .m-time-line b { color: #2c3e50; font-variant-numeric: tabular-nums; }
+        .m-time-line .low b { color: #d63031; }
+        .m-time-line .slow b { color: #b86e00; }
+        .m-pl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 14px; margin: 5px 0; color: #555; }
+        .m-pl .m-role { min-width: 52px; }
+        .m-meta { color: #8a97a5; font-size: 12.5px; }
+        .m-meta .att-mid { color: #e67e22; font-weight: bold; }
+        .m-meta .att-high { color: #d63031; font-weight: bold; }
+        .m-pl.empty { color: #aab4bf; }
+        .m-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: #2ecc71; flex: none; }
+        .m-dot.off { background: #b9c2cc; }
+        .m-ok { color: #2ecc71; font-weight: bold; }
+        .m-no { color: #e74c3c; font-weight: bold; }
+        .m-ready { color: #4dadff; font-weight: bold; }
+        .m-offtxt { color: #7b8794; font-size: 12px; background: #eceff3; border-radius: 6px; padding: 1px 6px; }
+        .m-wait-line { font-size: 13px; color: #6b7a89; margin: 4px 0 6px; }
+        .m-code-line { font-size: 13px; color: #2b5d9b; background: #e8f1ff; border-radius: 8px; padding: 5px 9px; margin: 4px 0 8px; display: inline-block; }
+        #mon-detail-overlay { display: none; position: fixed; inset: 0; background: rgba(40,55,75,.45); align-items: center; justify-content: center; z-index: 9000; padding: 20px; }
+        .m-modal { background: #fff; border-radius: 18px; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto; padding: 26px 28px; box-shadow: 0 20px 50px rgba(30,50,80,.35); }
+        .m-modal h3 { font-family: 'Gowun Dodum', sans-serif; color: #5c7285; margin: 0 0 14px; font-size: 21px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .m-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+        .m-info { background: #f4f8fc; border-radius: 10px; padding: 10px 12px; }
+        .m-info small { display: block; color: #8a97a5; font-size: 12px; margin-bottom: 3px; }
+        .m-info b { color: #2c3e50; font-size: 15px; font-variant-numeric: tabular-nums; }
+        .m-info b.low { color: #d63031; }
+        .m-pcard { border: 2px solid #eaf0f6; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+        .m-pcard.done { border-color: #cdeedb; background: #fafffc; }
+        .m-pcard-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; margin-bottom: 8px; }
+        .m-qbox { background: #faf7f0; border: 1px solid #ece4d2; border-radius: 8px; padding: 10px 12px; font-size: 14.5px; line-height: 1.7; color: #333; }
+        .m-ansline { font-size: 13px; color: #6b7a89; margin-top: 6px; }
+        .m-ansline b { color: #2c3e50; }
+        .m-sec { font-family: 'Gowun Dodum', sans-serif; color: #5c7285; font-size: 16px; margin: 18px 0 8px; display: flex; align-items: center; gap: 8px; }
+        .m-mini { font-family: inherit; font-size: 12px; padding: 3px 9px; border: 1px solid #d5dde6; border-radius: 6px; background: #f8fafc; color: #5c7285; cursor: pointer; }
+        .m-hint { font-size: 13px; color: #9aa7b4; padding: 4px 0 10px; }
+        .m-hist { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .m-hist th, .m-hist td { border: 1px solid #e6edf5; padding: 6px 8px; text-align: center; }
+        .m-hist th { background: #f4f8fc; color: #5c7285; font-weight: normal; }
+        .m-hist small { color: #8a97a5; }
+        .m-modal-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; }
+        .m-btn { background: #a3c4f3; color: #2c3e50; border: none; border-radius: 10px; padding: 10px 18px; font-family: 'Gowun Dodum', sans-serif; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .m-btn:hover { background: #8bb4ec; }
+
         /* 🎨 커스텀 모달 스타일 */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -943,52 +1015,303 @@
             }
         }
 
-        function monitorStudents() {
-            onValue(dbRef(db, 'rooms'), (snapshot) => {
-                const monitorBoard = document.getElementById("monitor-board");
-                monitorBoard.innerHTML = ""; 
-                if (!snapshot.exists()) {
-                    monitorBoard.innerHTML = "<p style='color:#9aaebd; text-align:center; padding: 20px 0;'>현재 접속 중인 조가 없습니다. 💤</p>";
-                    return;
+        // ==========================================
+        // 📊 실시간 조별 모니터링
+        // ==========================================
+        // 학생 활동 기록(구글 시트) 연동: index.html 의 ACTIVITY_LOG_URL / ACTIVITY_LOG_TOKEN 과 같은 값을 사용. 비워 두면 지난 스테이지 이력은 표시하지 않음
+        const ACTIVITY_LOG_URL = "https://script.google.com/macros/s/AKfycbzRCuDgKMMyPLHLlpYwMFFdtrpDWZ30_ktpt-Ht_9NCzp6CrGM1tZVIc0PJW63i7dfK/exec";
+        const ACTIVITY_LOG_TOKEN = "GINPhiarnkzF04B8RdTEjFpB6dux";
+
+        const MON_ROLES = [['high', '🔥상'], ['mid', '⚡중'], ['low', '🌱하']];
+        const MIN_MS = 60000;
+        const MON_STATUS_LABEL = { waiting: '역할 정하는 중', playing: '게임 진행 중', cleared: '클리어 완료', failed: '실패 (시간 초과)' };
+        const mon = { rooms: {}, quizzes: {}, timeLimit: 40, totalStages: 10, offset: 0,
+                      filter: 'all', sort: 'num', open: null, started: false, lastSig: '', history: {} };
+
+        const monNow = () => Date.now() + mon.offset; // Firebase 서버 시간 기준 (PC 시계 오차 보정)
+        const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+        const monPlayer = (r, role) => (r.players && r.players[role] && r.players[role].name) ? r.players[role] : null;
+        const monMembers = r => MON_ROLES.filter(([k]) => monPlayer(r, k)).length;
+        const monSolved = r => MON_ROLES.filter(([k]) => monPlayer(r, k) && monPlayer(r, k).isSolved).length;
+        const monAllSolved = r => monMembers(r) > 0 && monSolved(r) === monMembers(r);
+        const monOffline = r => MON_ROLES.filter(([k]) => monPlayer(r, k) && monPlayer(r, k).online === false).length;
+        const monRemaining = r => mon.timeLimit * MIN_MS - (monNow() - r.startTime);
+        const monStageElapsed = r => monNow() - r.stageStartTime;
+        // DB 상태가 playing 이어도 학생 브라우저가 모두 닫혀 있어 'failed' 로 못 바뀐 경우를 대비해 남은 시간으로 직접 판단
+        const monStatus = r => (r.status === 'playing' && r.startTime > 0 && monRemaining(r) <= 0) ? 'failed' : r.status;
+        const monLowTime = r => monStatus(r) === 'playing' && monRemaining(r) <= 5 * MIN_MS;
+        const monRoomNum = key => key.replace('room_', '');
+        const monStageName = n => (mon.quizzes['stage_' + n] && mon.quizzes['stage_' + n].stageName) || '';
+
+        function monFmt(ms) {
+            const s = Math.max(0, Math.floor(ms / 1000));
+            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+            const mm = String(m).padStart(h ? 2 : 1, '0'), ss = String(sec).padStart(2, '0');
+            return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+        }
+
+        // 이번 스테이지에서 평소보다 오래 걸리는 조: 기본 5분, 같은 스테이지에 다른 조가 있으면 그 평균의 1.5배(최소 2분)
+        function monStuck(key) {
+            const r = mon.rooms[key];
+            if (monStatus(r) !== 'playing' || monAllSolved(r)) return false;
+            const others = Object.keys(mon.rooms).filter(k => k !== key && mon.rooms[k].status && monStatus(mon.rooms[k]) === 'playing' && mon.rooms[k].currentStage === r.currentStage);
+            let th = 5 * MIN_MS;
+            if (others.length) {
+                const avg = others.reduce((s, k) => s + monStageElapsed(mon.rooms[k]), 0) / others.length;
+                th = Math.max(2 * MIN_MS, avg * 1.5);
+            }
+            return monStageElapsed(r) >= th;
+        }
+
+        function monProgress(r) {
+            const st = monStatus(r);
+            if (st === 'cleared') return 1;
+            if (st === 'waiting') return 0;
+            return Math.min(1, ((r.currentStage || 1) - 1 + (monMembers(r) ? monSolved(r) / 3 : 0)) / mon.totalStages);
+        }
+
+        // 1초마다 갱신되는 시간 문자열 (data-live="종류:방:역할")
+        function monLiveText(spec) {
+            const [type, key, role] = spec.split(':');
+            const r = mon.rooms[key]; if (!r) return '';
+            if (type === 'remain') return monFmt(monRemaining(r));
+            if (type === 'stage') return monFmt(monStageElapsed(r));
+            if (type === 'total') return r.status === 'cleared' ? '-' : monFmt(Math.min(monNow() - r.startTime, mon.timeLimit * MIN_MS));
+            if (type === 'off') { const p = monPlayer(r, role); return p && p.lastSeen ? monFmt(monNow() - p.lastSeen) : ''; }
+            return '';
+        }
+        const monLive = spec => `<span data-live="${spec}">${monLiveText(spec)}</span>`;
+
+        function monPlayerLine(key, r, role, label) {
+            const p = monPlayer(r, role);
+            if (!p) return `<div class="m-pl empty"><span class="m-role">${label}</span> 비어 있음</div>`;
+            const off = p.online === false;
+            const dot = `<span class="m-dot${off ? ' off' : ''}"></span>`;
+            const offTxt = off ? `<span class="m-offtxt">접속 끊김 ${p.lastSeen ? monLive('off:' + key + ':' + role) : ''}</span>` : '';
+            if (r.status === 'waiting') {
+                return `<div class="m-pl">${dot}<span class="m-role">${label}</span> ${esc(p.name)} <span class="m-ready">🙋 준비 완료</span> ${offTxt}</div>`;
+            }
+            const att = p.attempts || 0;
+            const attCls = att >= 5 ? 'att-high' : att >= 3 ? 'att-mid' : '';
+            const stat = p.isSolved ? '<span class="m-ok">✅ 정답</span>' : '<span class="m-no">❌ 푸는 중</span>';
+            const meta = `<span class="m-meta">(시도 <span class="${attCls}">${att}회</span>${p.isSolved ? ' · ' + monFmt((p.solveTime || 0) * 1000) : ''})</span>`;
+            return `<div class="m-pl">${dot}<span class="m-role">${label}</span> ${esc(p.name)} ${stat} ${meta} ${offTxt}</div>`;
+        }
+
+        function monCardHTML(key) {
+            const r = mon.rooms[key];
+            const st = monStatus(r);
+            const stuck = monStuck(key), off = monOffline(r), low = monLowTime(r);
+            const pct = Math.round(monProgress(r) * 100);
+
+            const head = `<div class="m-card-head"><h4>${esc(monRoomNum(key))}조</h4>
+                <span class="m-badge ${st}">${MON_STATUS_LABEL[st] || esc(st)}</span>
+                ${stuck ? '<span class="m-badge stuck" title="이번 스테이지에서 평소보다 오래 걸리는 중">⚠️ 막힘</span>' : ''}
+                ${off ? `<span class="m-badge off">⚪ 접속 끊김 ${off}명</span>` : ''}
+                <span class="m-spacer"></span>
+                <button class="del-room-btn" onclick="event.stopPropagation(); deleteSingleRoom('${esc(key)}')">조 삭제</button></div>`;
+
+            let body = '';
+            if (st === 'waiting') {
+                const empties = MON_ROLES.filter(([k]) => !monPlayer(r, k)).map(([, l]) => l.slice(2)).join('·');
+                body += `<div class="m-wait-line">📍 대기실 · 조원 ${monMembers(r)}/3명${empties ? ' (' + empties + ' 비어 있음)' : ''}</div>`;
+                if (r.awaitingCode) body += `<div class="m-code-line">🔑 팀장이 입장 코드를 입력하는 중</div>`;
+            } else {
+                const stageLabel = st === 'cleared' ? `전 스테이지 클리어 (${mon.totalStages}/${mon.totalStages})`
+                    : `Stage ${r.currentStage || 1} / ${mon.totalStages}${monStageName(r.currentStage) ? ' · ' + esc(monStageName(r.currentStage)) : ''}`;
+                body += `<div class="m-stage-line"><span>📍 ${stageLabel}</span><div class="m-pbar"><i style="width:${pct}%"></i></div><span>${pct}%</span></div>`;
+                if (st === 'playing') {
+                    body += `<div class="m-time-line">
+                        <span class="${low ? 'low' : ''}">⏱ 남은 시간 <b>${monLive('remain:' + key)}</b>${low ? ' ⏰' : ''}</span>
+                        <span class="${stuck ? 'slow' : ''}">🕒 이번 스테이지 <b>${monLive('stage:' + key)}</b> 경과</span></div>`;
                 }
-                const statusLabelMap = {
-                    waiting: "역할 정하는 중",
-                    playing: "게임 진행 중",
-                    cleared: "클리어 완료",
-                    failed: "실패 (시간 초과)"
-                };
+            }
+            const lines = MON_ROLES.map(([k, l]) => monPlayerLine(key, r, k, l)).join('');
+            return `<div class="m-card s-${st}${stuck ? ' stuck' : ''}" onclick="openRoomDetail('${esc(key)}')">${head}${body}${lines}</div>`;
+        }
 
-                snapshot.forEach(childSnapshot => {
-                    const roomName = childSnapshot.key;
-                    const roomData = childSnapshot.val();
-                    const roomDisplayName = roomName.replace('room_', '') + "조";
-                    const isWaiting = roomData.status === "waiting";
+        const monKeys = () => Object.keys(mon.rooms).filter(k => mon.rooms[k] && mon.rooms[k].status); // 상태 없는 껍데기 데이터는 제외
 
-                    const statusLabel = statusLabelMap[roomData.status] || (roomData.status || '-');
-                    const locationLabel = isWaiting ? "대기실" : `Stage ${roomData.currentStage || 1}`;
+        function monMatchFilter(key) {
+            const r = mon.rooms[key], f = mon.filter;
+            if (f === 'all') return true;
+            if (f === 'stuck') return monStuck(key);
+            if (f === 'offline') return monOffline(r) > 0;
+            return monStatus(r) === f;
+        }
 
-                    let html = `<div class="student-data">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <h4 style="margin: 0;">${roomDisplayName} <span style="font-size:14px; color:#728496; font-weight:normal;">(상태: ${statusLabel} / 위치: ${locationLabel})</span></h4>
-                            <button class="del-room-btn" onclick="deleteSingleRoom('${roomName}')">조 삭제</button>
-                        </div>`;
-                    ['high', 'mid', 'low'].forEach(r => {
-                        const p = roomData.players ? roomData.players[r] : null;
-                        if(p && p.name) {
-                            const roleName = r === 'high' ? '🔥상' : (r === 'mid' ? '⚡중' : '🌱하');
-                            if (isWaiting) {
-                                html += `<p>- ${roleName} (${p.name}): <strong><span style="color:#4dadff;">🙋 준비 완료</span></strong></p>`;
-                            } else {
-                                html += `<p>- ${roleName} (${p.name}):
-                                    <strong>${p.isSolved ? '<span style="color:#2ecc71;">✅ 정답</span>' : '<span style="color:#e74c3c;">❌ 푸는 중</span>'}</strong>
-                                    <span style="color:#888;">(시도: ${p.attempts || 0}회, 소요시간: ${p.solveTime || 0}초)</span></p>`;
-                            }
-                        }
-                    });
-                    html += `</div>`;
-                    monitorBoard.innerHTML += html;
+        function renderMon() {
+            const board = document.getElementById('monitor-board');
+            if (!board) return;
+            const all = monKeys();
+            const c = { all: all.length, waiting: 0, playing: 0, cleared: 0, failed: 0, stuck: 0, offline: 0 };
+            all.forEach(k => { c[monStatus(mon.rooms[k])]++; if (monStuck(k)) c.stuck++; if (monOffline(mon.rooms[k])) c.offline++; });
+
+            if (!all.length) {
+                document.getElementById('mon-summary').innerHTML = '';
+                document.getElementById('mon-toolbar-info').textContent = '';
+                board.innerHTML = "<p style='color:#9aaebd; text-align:center; padding: 20px 0;'>현재 접속 중인 조가 없습니다. 💤</p>";
+                mon.lastSig = monSignature();
+                if (mon.open) closeRoomDetail();
+                return;
+            }
+
+            const chips = [['all', '전체', c.all], ['waiting', '대기', c.waiting], ['playing', '진행', c.playing], ['cleared', '클리어', c.cleared],
+                           ['failed', '실패', c.failed], ['stuck', '⚠️ 막힘', c.stuck, 1], ['offline', '⚪ 접속 끊김', c.offline, 1]];
+            document.getElementById('mon-summary').innerHTML = chips.map(([k, l, n, w]) =>
+                `<button class="m-chip${mon.filter === k ? ' on' : ''}${w && n ? ' warn' : ''}" onclick="setMonFilter('${k}')">${l}<b>${n}</b></button>`).join('');
+
+            const num = k => { const n = Number(monRoomNum(k)); return isNaN(n) ? 1e9 : n; };
+            let keys = all.filter(monMatchFilter);
+            if (mon.sort === 'progress') keys.sort((a, b) => monProgress(mon.rooms[b]) - monProgress(mon.rooms[a]) || num(a) - num(b));
+            else if (mon.sort === 'attention') {
+                const score = k => (monStuck(k) ? 4 : 0) + (monLowTime(mon.rooms[k]) ? 2 : 0) + (monOffline(mon.rooms[k]) ? 1 : 0) + (monStatus(mon.rooms[k]) === 'playing' ? 0.5 : 0);
+                keys.sort((a, b) => score(b) - score(a) || num(a) - num(b));
+            } else keys.sort((a, b) => num(a) - num(b) || a.localeCompare(b));
+
+            document.getElementById('mon-toolbar-info').textContent = `${keys.length}개 조 표시 중`;
+            const scrollTop = board.scrollTop;
+            board.innerHTML = keys.length ? keys.map(monCardHTML).join('') : '<p style="color:#9aaebd; text-align:center; padding: 20px 0;">조건에 맞는 조가 없습니다. 💤</p>';
+            board.scrollTop = scrollTop;
+            mon.lastSig = monSignature();
+            if (mon.open) renderRoomDetail();
+        }
+        window.setMonFilter = function(k) { mon.filter = mon.filter === k ? 'all' : k; renderMon(); };
+        window.setMonSort = function(v) { mon.sort = v; renderMon(); };
+
+        // ---------- 조 상세 보기 ----------
+        window.openRoomDetail = function(key) {
+            mon.open = key;
+            document.getElementById('mon-detail-overlay').style.display = 'flex';
+            renderRoomDetail();
+            loadRoomHistory(key);
+        };
+        window.closeRoomDetail = function() {
+            mon.open = null;
+            document.getElementById('mon-detail-overlay').style.display = 'none';
+        };
+
+        // 구글 시트(Apps Script)에 쌓인 이번 게임의 이벤트를 불러옴
+        window.loadRoomHistory = async function(key) {
+            if (!ACTIVITY_LOG_URL) { mon.history[key] = { state: 'off' }; if (mon.open === key) renderRoomDetail(); return; }
+            mon.history[key] = { state: 'loading' }; if (mon.open === key) renderRoomDetail();
+            try {
+                const url = `${ACTIVITY_LOG_URL}?action=history&room=${encodeURIComponent(monRoomNum(key))}&token=${encodeURIComponent(ACTIVITY_LOG_TOKEN)}`;
+                const data = await (await fetch(url)).json();
+                mon.history[key] = data.error ? { state: 'error' } : { state: 'ok', sid: Number(data.sid) || 0, rows: data.rows || [] };
+            } catch (e) {
+                mon.history[key] = { state: 'error' };
+            }
+            if (mon.open === key) renderRoomDetail();
+        };
+
+        function monHistoryHTML(key, r) {
+            const h = mon.history[key];
+            const title = '<h5 class="m-sec">📜 지난 스테이지 이력 <button class="m-mini" onclick="loadRoomHistory(\'' + esc(key) + '\')">새로고침</button></h5>';
+            if (!h || h.state === 'off') return title + '<div class="m-hint">구글 시트 연동 전입니다. (ACTIVITY_LOG_URL 설정 후 표시됩니다)</div>';
+            if (h.state === 'loading') return title + '<div class="m-hint">불러오는 중...</div>';
+            if (h.state === 'error') return title + '<div class="m-hint">이력을 불러오지 못했습니다. 잠시 후 새로고침해 주세요.</div>';
+            if (!h.rows.length || (r.startTime && h.sid !== Number(r.startTime))) return title + '<div class="m-hint">이번 게임의 기록이 아직 없습니다.</div>';
+
+            const cur = r.currentStage || 1;
+            const lastStage = Math.max(cur, ...h.rows.map(e => Number(e.stage) || 0));
+            let rows = '';
+            for (let s = 1; s <= Math.min(lastStage, mon.totalStages); s++) {
+                let cells = `<td>${s}${monStageName(s) ? '<br><small>' + esc(monStageName(s)) + '</small>' : ''}</td>`;
+                MON_ROLES.forEach(([role, label]) => {
+                    const lab = label.slice(2);
+                    const ok = h.rows.find(e => Number(e.stage) === s && e.role === lab && e.event === '정답');
+                    const wr = h.rows.filter(e => Number(e.stage) === s && e.role === lab && e.event === '오답').length;
+                    if (ok) cells += `<td>✅ ${monFmt(ok.secs * 1000)}<br><small>시도 ${ok.attempts}회</small></td>`;
+                    else if (s <= cur) cells += `<td><span class="m-no">${s === cur ? '푸는 중' : '미해결'}</span>${wr ? `<br><small>오답 ${wr}회</small>` : ''}</td>`;
+                    else cells += '<td>-</td>';
                 });
+                const d = h.rows.find(e => Number(e.stage) === s && e.event === '스테이지완료');
+                cells += `<td>${d ? monFmt(d.secs * 1000) : '-'}</td>`;
+                rows += `<tr>${cells}</tr>`;
+            }
+            return title + `<table class="m-hist"><thead><tr><th>스테이지</th><th>🔥상</th><th>⚡중</th><th>🌱하</th><th>스테이지 소요</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+
+        function renderRoomDetail() {
+            const key = mon.open, r = mon.rooms[key];
+            const modal = document.getElementById('mon-detail-modal');
+            if (!r || !r.status) { closeRoomDetail(); return; }
+            const st = monStatus(r), stuck = monStuck(key), off = monOffline(r), low = monLowTime(r);
+            const started = r.startTime ? new Date(r.startTime).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-';
+
+            let h = `<h3>${esc(monRoomNum(key))}조 상세 <span class="m-badge ${st}">${MON_STATUS_LABEL[st] || esc(st)}</span>
+                ${stuck ? '<span class="m-badge stuck">⚠️ 막힘</span>' : ''}${off ? `<span class="m-badge off">⚪ 접속 끊김 ${off}명</span>` : ''}</h3>`;
+
+            if (st === 'waiting') {
+                h += `<div class="m-info-grid">
+                    <div class="m-info"><small>조원</small><b>${monMembers(r)} / 3명</b></div>
+                    <div class="m-info"><small>입장 코드</small><b>${r.awaitingCode ? '팀장 입력 중' : '대기 중'}</b></div>
+                    <div class="m-info"><small>위치</small><b>대기실</b></div></div>`;
+            } else {
+                h += `<div class="m-info-grid">
+                    <div class="m-info"><small>시작 시각</small><b>${started}</b></div>
+                    <div class="m-info"><small>전체 경과</small><b class="${st === 'failed' ? 'low' : ''}">${monLive('total:' + key)}</b></div>
+                    <div class="m-info"><small>남은 시간</small>${st === 'failed' ? '<b class="low">시간 초과</b>'
+                        : `<b class="${low ? 'low' : ''}">${st === 'playing' ? monLive('remain:' + key) : '-'}</b>`}</div>
+                    <div class="m-info"><small>현재 스테이지</small><b>${r.currentStage || 1} / ${mon.totalStages}${monStageName(r.currentStage) ? ' · ' + esc(monStageName(r.currentStage)) : ''}</b></div>
+                    <div class="m-info"><small>이번 스테이지 경과</small><b>${st === 'playing' ? monLive('stage:' + key) : '-'}</b></div>
+                    <div class="m-info"><small>진행률</small><b>${Math.round(monProgress(r) * 100)}%</b></div></div>`;
+            }
+
+            MON_ROLES.forEach(([role, label]) => {
+                const p = monPlayer(r, role);
+                if (!p) { h += `<div class="m-pcard"><div class="m-pcard-head" style="color:#aab4bf">${label} · 비어 있음</div></div>`; return; }
+                const isOff = p.online === false;
+                const dot = `<span class="m-dot${isOff ? ' off' : ''}"></span>`;
+                const offT = isOff ? `<span class="m-offtxt">접속 끊김 ${p.lastSeen ? monLive('off:' + key + ':' + role) : ''}</span>` : '<span class="m-meta" style="color:#2f9e5b">접속 중</span>';
+                let stat, qbox = '';
+                if (st === 'waiting') stat = '<span class="m-ready">🙋 준비 완료</span>';
+                else {
+                    stat = p.isSolved ? '<span class="m-ok">✅ 정답</span>' : '<span class="m-no">❌ 푸는 중</span>';
+                    const q = mon.quizzes['stage_' + r.currentStage] && mon.quizzes['stage_' + r.currentStage][role];
+                    if (q) qbox = `<div class="m-qbox">${q.question || ''}</div><div class="m-ansline">정답(교사용): <b>${esc(q.answer)}</b></div>`;
+                }
+                const att = p.attempts || 0;
+                const attCls = att >= 5 ? 'att-high' : att >= 3 ? 'att-mid' : '';
+                const meta = st === 'waiting' ? '' : `<span class="m-meta">시도 <span class="${attCls}">${att}회</span>${p.isSolved ? ' · 소요 ' + monFmt((p.solveTime || 0) * 1000) : ''}</span>`;
+                h += `<div class="m-pcard${p.isSolved ? ' done' : ''}"><div class="m-pcard-head">${dot}<b>${label} ${esc(p.name)}</b>${stat}${meta}<span class="m-spacer"></span>${offT}</div>${qbox}</div>`;
             });
+
+            if (st !== 'waiting') h += monHistoryHTML(key, r);
+            h += `<div class="m-modal-foot"><button class="del-room-btn" style="padding:10px 16px;font-size:14px" onclick="deleteSingleRoom('${esc(key)}')">조 삭제</button>
+                  <button class="m-btn" onclick="closeRoomDetail()">닫기</button></div>`;
+            const top = modal.scrollTop;
+            modal.innerHTML = h;
+            modal.scrollTop = top;
+        }
+
+        // ---------- 갱신 ----------
+        function monSignature() {
+            return monKeys().map(k => `${k}:${monStatus(mon.rooms[k])}:${monStuck(k)}:${monLowTime(mon.rooms[k])}`).join('|');
+        }
+        function monTick() {
+            if (monSignature() !== mon.lastSig) { renderMon(); return; } // 막힘/시간 초과 등이 시간 경과로 바뀐 경우
+            document.querySelectorAll('[data-live]').forEach(el => { el.textContent = monLiveText(el.dataset.live); });
+        }
+
+        function monitorStudents() {
+            if (mon.started) return; // 로그인 상태가 바뀔 때마다 리스너가 중복 등록되지 않도록
+            mon.started = true;
+            document.getElementById('mon-detail-overlay').addEventListener('click', e => { if (e.target.id === 'mon-detail-overlay') closeRoomDetail(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape' && mon.open) closeRoomDetail(); });
+
+            onValue(dbRef(db, '.info/serverTimeOffset'), snap => { mon.offset = snap.val() || 0; });
+            onValue(dbRef(db, 'settings'), snap => {
+                const s = snap.val() || {};
+                mon.timeLimit = Number(s.timeLimit) || 40;
+                mon.totalStages = Number(s.totalStages) || 10;
+                renderMon();
+            });
+            onValue(dbRef(db, 'quizzes'), snap => { mon.quizzes = snap.val() || {}; renderMon(); });
+            onValue(dbRef(db, 'rooms'), snap => { mon.rooms = snap.val() || {}; renderMon(); });
+            setInterval(monTick, 1000);
         }
 
         window.resetAndSaveData = async function() {
@@ -1090,6 +1413,17 @@
         <div class="panel monitor-panel">
             <button id="reset-btn" class="reset-btn" onclick="resetAndSaveData()">🚨 전체 게임 종료 및 데이터 백업</button>
             <h2>📊 실시간 조별 모니터링</h2>
+            <div id="mon-summary" class="m-summary"></div>
+            <div class="m-toolbar">
+                <span id="mon-toolbar-info"></span>
+                <label style="margin:0; display:flex; align-items:center; gap:6px; font-weight:normal;">정렬
+                    <select class="m-sort" onchange="setMonSort(this.value)">
+                        <option value="num">조 번호순</option>
+                        <option value="progress">진행도순</option>
+                        <option value="attention">주의 필요 순</option>
+                    </select>
+                </label>
+            </div>
             <div id="monitor-board" class="monitor-board-flex">
                 데이터를 불러오는 중...
             </div>
@@ -1184,6 +1518,10 @@
         </div>
         </div>
         </div>
+    </div>
+
+    <div id="mon-detail-overlay">
+        <div id="mon-detail-modal" class="m-modal"></div>
     </div>
 
     <div id="custom-modal-overlay" class="modal-overlay">
