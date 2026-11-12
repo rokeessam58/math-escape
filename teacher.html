@@ -245,7 +245,8 @@
             return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
         function convertLatexToQuillHtml(text) {
-            return String(text).replace(/\$([^$\n]+?)\$/g, (match, latex) => {
+            // 엑셀의 줄바꿈(\r\n)에서 \r이 남아 저장되지 않도록 \n 하나로 통일
+            return String(text).replace(/\r\n?/g, '\n').replace(/\$([^$\n]+?)\$/g, (match, latex) => {
                 const tex = latex.trim();
                 if (!tex) return match;
                 try {
@@ -263,7 +264,9 @@
         // - <p> 문단과 <br>은 줄바꿈으로 바꿈 (업로드 시 줄바꿈은 다시 <br>로 변환됨)
         // - 굵게/색상 등 그 밖의 서식 태그는 업로드해도 유지되도록 그대로 둠
         function htmlToExcelText(html) {
-            const src = String(html || "");
+            // 이미 저장된 데이터에 섞인 \r(엑셀에서 _x000D_ 로 보임)도 제거
+            // (저장된 형태는 "\r<br>" 이므로 \r만 지워야 줄바꿈이 두 번 나오지 않음)
+            const src = String(html || "").replace(/\r/g, '');
             if (!/<[a-z][\s\S]*>/i.test(src)) return src; // 서식 에디터 이전에 저장된 일반 텍스트는 그대로
             const doc = new DOMParser().parseFromString(src, 'text/html');
             const VOID = new Set(['img', 'hr', 'wbr']);
