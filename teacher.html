@@ -115,6 +115,9 @@
         
         .reset-btn { font-family: 'Gowun Dodum', sans-serif; background: #ffb5a7; color: #7a3b3b; margin-bottom: 25px; font-size: 17px; padding: 16px; box-shadow: 0 4px 12px rgba(255, 181, 167, 0.4); border: none; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; }
         .reset-btn:hover:not(:disabled) { background: #fca392; }
+        .archive-btn { font-family: 'Gowun Dodum', sans-serif; background: #d8e6f7; color: #2c3e50; margin-bottom: 25px; font-size: 16px; padding: 13px; border: none; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; }
+        .archive-btn:hover:not(:disabled) { background: #c3d8f1; }
+        .archive-btn:disabled { opacity: .6; cursor: not-allowed; }
 
         /* 📊 엑셀 박스 스타일 */
         .excel-box { background: #f8fafc; border-radius: 12px; padding: 18px; margin-bottom: 25px; border: 2px dashed #a2b9d6; text-align: center; }
@@ -228,6 +231,16 @@
         #login-screen h2 { border-bottom: none; }
         .login-error { color: #e74c3c; font-size: 13px; margin-top: 10px; display: none; }
         #dashboard-container { display: none; }
+
+        /* 저장된 로그인 정보로 자동 접속 중 표시 (로그인 창이 잠깐 보이는 깜빡임 방지) */
+        #auto-login-overlay { display: none; flex-direction: column; }
+        html.auto-login #auto-login-overlay { display: flex; }
+        html.auto-login #login-screen { display: none; }
+        .auto-login-spinner {
+            width: 34px; height: 34px; margin: 0 auto 16px; border: 4px solid #e2e8f0;
+            border-top-color: #a3c4f3; border-radius: 50%; animation: auto-login-spin 0.9s linear infinite;
+        }
+        @keyframes auto-login-spin { to { transform: rotate(360deg); } }
 
         .settings-row-wide { display: flex; gap: 30px; flex-wrap: wrap; }
         .settings-unit { flex: 1; min-width: 240px; }
@@ -441,6 +454,10 @@
             const loginScreen = document.getElementById("login-screen");
             const dashboard = document.getElementById("dashboard-container");
 
+            const root = document.documentElement;
+            const wasAutoLogin = root.classList.contains('auto-login');
+            try { if (user) localStorage.setItem('teacherSavedLogin', '1'); else localStorage.removeItem('teacherSavedLogin'); } catch (e) {}
+
             if (user) {
                 loginScreen.style.display = "none";
                 dashboard.style.display = "block";
@@ -468,14 +485,25 @@
                 }
 
                 // 스테이지 드롭다운(전체 스테이지 수)이 먼저 채워진 뒤에 문제/설명을 불러와야 함
-                await loadSettings();
-                loadQuestion();
-                loadStageDesc();
-                loadIntro();
-                monitorStudents();
+                try {
+                    await loadSettings();
+                    loadQuestion();
+                    loadStageDesc();
+                    loadIntro();
+                    monitorStudents();
+                } finally {
+                    root.classList.remove('auto-login');   // 자동 접속 완료 → "접속 중" 모달 닫기 (실패해도 닫음)
+                }
             } else {
+                root.classList.remove('auto-login');
                 loginScreen.style.display = "block";
                 dashboard.style.display = "none";
+                if (wasAutoLogin) {
+                    // 저장된 로그인 정보가 있다고 생각했지만 만료/삭제된 경우
+                    const errorEl = document.getElementById("login-error");
+                    errorEl.innerText = "저장된 로그인 정보가 만료되었습니다. 다시 로그인해 주세요.";
+                    errorEl.style.display = "block";
+                }
             }
         });
 
@@ -1180,6 +1208,37 @@
         window.setMonFilter = function(k) { mon.filter = mon.filter === k ? 'all' : k; renderMon(); };
         window.setMonSort = function(v) { mon.sort = v; renderMon(); };
 
+        // ---------- 구글 시트 아카이빙 ----------
+        // 구글 시트의 기록 시트 4개에 날짜(_연월일)를 붙여 보관하고, 새 기록용 시트 4개를 만든다 (Apps Script 가 처리)
+        window.archiveSheets = async function() {
+            if (!ACTIVITY_LOG_URL) return await customAlert("구글 시트 연동(ACTIVITY_LOG_URL)이 설정되어 있지 않습니다.");
+            const confirmed = await customConfirm(
+                "🗂️ 구글 시트의 기록 시트 4개(이벤트 로그 · 스테이지별 요약 · 조별 요약 · 학생별 요약)에\n" +
+                "오늘 날짜(_연월일)를 붙여 보관하고,\n새로운 기록용 시트 4개를 만듭니다.\n\n" +
+                "※ 진행 중인 게임이 있다면 이후 기록부터 새 시트에 쌓입니다.\n\n정말 아카이빙하시겠습니까?");
+            if (!confirmed) return;
+
+            const btn = document.getElementById("archive-btn");
+            btn.disabled = true; btn.innerText = "아카이빙 진행 중... ⏳";
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                const user = auth.currentUser;
+                if (!user) throw new Error("로그인 정보를 확인할 수 없습니다. 다시 로그인해 주세요.");
+                const idToken = await user.getIdToken(true);
+                const url = `${ACTIVITY_LOG_URL}?action=archive&token=${encodeURIComponent(ACTIVITY_LOG_TOKEN)}&idToken=${encodeURIComponent(idToken)}`;
+                const data = await (await fetch(url)).json();
+                if (data.error) throw new Error(data.error);
+                mon.history = {}; // 새 시트가 만들어졌으므로 불러와 둔 이력은 비움
+                document.getElementById('loading-overlay').style.display = 'none';
+                await customAlert("✅ 아카이빙이 완료되었습니다.\n\n보관된 시트:\n" + (data.renamed.length ? data.renamed.join("\n") : "(보관할 기존 시트 없음)") + "\n\n새 기록용 시트 4개가 만들어졌습니다.");
+            } catch (e) {
+                document.getElementById('loading-overlay').style.display = 'none';
+                await customAlert("❌ 아카이빙 중 오류가 발생했습니다: " + e.message);
+            }
+            document.getElementById('loading-overlay').style.display = 'none';
+            btn.disabled = false; btn.innerText = "🗂️ 최근 진행내용 아카이빙";
+        };
+
         // ---------- 조 상세 보기 ----------
         window.openRoomDetail = function(key) {
             mon.open = key;
@@ -1356,6 +1415,18 @@
     </script>
 </head>
 <body>
+    <script>
+        // 이 브라우저에 로그인 정보가 저장돼 있었다면(이전에 로그인한 적이 있으면) 로그인 창 대신 "접속 중" 모달을 먼저 보여줌
+        try { if (localStorage.getItem('teacherSavedLogin') === '1') document.documentElement.classList.add('auto-login'); } catch (e) {}
+    </script>
+    <div id="auto-login-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <div class="auto-login-spinner"></div>
+            <p style="font-size: 20px; font-family: 'Gowun Dodum', sans-serif; margin: 0 0 8px;">저장된 로그인 정보로 접속 중입니다</p>
+            <p style="font-size: 14px; color: #888; margin: 0;">잠시만 기다려 주세요...</p>
+        </div>
+    </div>
+
     <div id="login-screen">
         <h2>🔐 교사 로그인</h2>
         <p style="color:#888; margin-bottom: 20px; font-size: 14px;">교사 계정으로 로그인해야 대시보드를 사용할 수 있습니다.</p>
@@ -1411,7 +1482,8 @@
 
         <div class="row-half">
         <div class="panel monitor-panel">
-            <button id="reset-btn" class="reset-btn" onclick="resetAndSaveData()">🚨 전체 게임 종료 및 데이터 백업</button>
+            <button id="reset-btn" class="reset-btn" style="margin-bottom: 10px;" onclick="resetAndSaveData()">🚨 전체 게임 종료 및 데이터 백업</button>
+            <button id="archive-btn" class="archive-btn" onclick="archiveSheets()">🗂️ 최근 진행내용 아카이빙</button>
             <h2>📊 실시간 조별 모니터링</h2>
             <div id="mon-summary" class="m-summary"></div>
             <div class="m-toolbar">
