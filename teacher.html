@@ -734,7 +734,7 @@
             const imgEl = document.getElementById("stage-preview-img");
             document.getElementById("stage-img-file").value = ""; updateStageFileName();
             if (imgSnap.exists() && imgSnap.val()) {
-                imgEl.src = imgSnap.val();
+                imgEl.src = driveImgSrc(imgSnap.val());
                 imgBox.style.display = "block";
             } else {
                 imgEl.removeAttribute("src");
@@ -753,6 +753,13 @@
             document.getElementById("stage-preview-img").removeAttribute("src");
             document.getElementById("stage-image-preview-box").style.display = "none";
         };
+
+        // 구글 드라이브 'uc?export=view' 주소는 브라우저 <img>에서 막혀 깨져 보이므로, 표시할 때만 썸네일 주소로 바꿈
+        // (DB 에 저장된 값은 그대로 두고, 이미 썸네일 주소이거나 드라이브가 아닌 주소는 변경하지 않음)
+        function driveImgSrc(url) {
+            const m = String(url || "").match(/drive\.google\.com\/(?:uc\?(?:[^#]*&)?id=|file\/d\/)([\w-]+)/);
+            return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200` : url;
+        }
 
         // 이미지 파일을 Apps Script(Drive)로 업로드하고 URL을 반환 (실패 시 null)
         async function uploadImageFile(file, filename) {
@@ -911,7 +918,7 @@
 
                 document.getElementById("q-ans").value = data.answer || "";
                 if (data.imageUrl) {
-                    previewImg.src = data.imageUrl;
+                    previewImg.src = driveImgSrc(data.imageUrl);
                     previewBox.style.display = "block";
                 } else {
                     previewImg.src = "";
